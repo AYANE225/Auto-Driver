@@ -94,8 +94,8 @@ carla_av_perception/
 |-------|-------------|--------|
 | `perception_core` | Detection / fusion / tracking / prediction + 41 unit tests | ✅ done |
 | Offline demo + CI | BEV renderer, GIF, CLEAR-MOT report, GitHub Actions | ✅ done |
-| ROS 2 layer | Custom msgs, rclpy nodes, launch + RViz visualization | 🚧 in progress |
-| CARLA layer | Sensor bridge, NPC traffic, rosbag2 scenario recorder | 🗓 planned |
+| ROS 2 layer | Custom msgs, rclpy nodes, launch + RViz visualization | ✅ done |
+| CARLA layer | Sensor bridge, NPC traffic, record → replay dataset | ✅ done |
 
 ## Quickstart
 
@@ -114,6 +114,31 @@ pytest -q src/perception_core
 
 > Inside a **sourced ROS 2 environment**, disable the incompatible ROS pytest
 > plugins first: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q`.
+
+### Run the ROS 2 graph
+
+```bash
+# Build the workspace (ROS 2 Humble sourced)
+colcon build --packages-select av_perception_msgs av_perception av_bringup
+source install/setup.bash
+
+# Launch: synthetic LiDAR publisher + perception node + RViz (no CARLA needed)
+ros2 launch av_bringup perception.launch.py            # add rviz:=false for headless
+```
+
+The graph publishes `~/tracks` (`TrackedObjectArray`), `~/predictions`
+(`PredictedObjectArray`) and `~/markers` (`MarkerArray` for RViz). Point the
+`perception_node` at a real source by remapping `/lidar/points`.
+
+### Feed it CARLA data
+
+```bash
+# See carla/README.md — record a scenario from a CARLA server, then either
+# replay it offline through the same pipeline ...
+python carla/replay_demo.py --dataset carla/data/urban --gif docs/screenshots/demo_carla.gif
+# ... or republish it into the ROS 2 graph as /lidar/points.
+```
+
 
 ## Tech stack
 
