@@ -1,0 +1,27 @@
+# Highway scenario: faster traffic, longer LiDAR range, fewer pedestrians.
+town: Town04
+dt: 0.1
+num_frames: 500
+warmup_frames: 40
+num_vehicles: 45
+num_walkers: 0
+weather: ClearSunset
+seed: 7
+ego: vehicle.tesla.model3
+
+lidar:
+  channels: 64
+  range: 100.0
+  points_per_second: 1300000
+  upper_fov: 10.0
+  lower_fov: -25.0
+  z: 1.8
+
+cameras:
+  - name: front
+    width: 1280
+    height: 720
+    fov: 75.0
+    x: 1.5
+    z: 1.6
+    yaw: 0.0

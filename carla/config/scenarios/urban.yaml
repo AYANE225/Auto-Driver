@@ -1,0 +1,27 @@
+# Dense urban scenario: many vehicles + pedestrians in a compact town.
+town: Town03
+dt: 0.1
+num_frames: 400
+warmup_frames: 30
+num_vehicles: 60
+num_walkers: 30
+weather: ClearNoon
+seed: 2024
+ego: vehicle.tesla.model3
+
+lidar:
+  channels: 64
+  range: 80.0
+  points_per_second: 1200000
+  upper_fov: 10.0
+  lower_fov: -30.0
+  z: 1.8
+
+cameras:
+  - name: front
+    width: 1280
+    height: 720
+    fov: 90.0
+    x: 1.5
+    z: 1.6
+    yaw: 0.0
