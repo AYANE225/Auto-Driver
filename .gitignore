@@ -1,0 +1,39 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# ROS 2 colcon artifacts
+build/
+install/
+log/
+
+# Generated demo / data artifacts
+outputs/
+*.mp4
+*.gif
+!docs/screenshots/*.gif
+data/
+*.bag
+*.db3
+rosbag2_*/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "perception_core"
+version = "0.1.0"
+description = "Framework-agnostic autonomous-driving perception core: detection, sensor fusion, multi-object tracking and motion prediction."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "CST" }]
+keywords = ["autonomous-driving", "perception", "tracking", "prediction", "lidar", "sensor-fusion"]
+
+# Core stays intentionally light: only classical numerical stack.
+# Deep models (YOLO / PointPillars) and visualisation are optional extras so
+# that unit tests and CI run fast on CPU with no ROS / CUDA / CARLA present.
+dependencies = [
+    "numpy>=1.21",
+    "scipy>=1.7",
+    "scikit-learn>=1.0",
+]
+
+[project.optional-dependencies]
+yolo = ["ultralytics>=8.0", "opencv-python>=4.5"]
+viz = ["open3d>=0.16", "matplotlib>=3.4"]
+test = ["pytest>=7.0", "pytest-cov>=4.0"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1", "mypy>=1.0"]
+
+[tool.setuptools.packages.find]
+include = ["perception_core*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+ignore_missing_imports = true
