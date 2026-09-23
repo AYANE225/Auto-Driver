@@ -63,6 +63,58 @@ pedestrian), classical LiDAR detector — matched to ground truth by BEV IoU:
 
 Reproduce: `python tools/run_demo.py --frames 60 --detector lidar --report metrics.json`
 
+## Real-data validation (KITTI raw)
+
+The same pipeline runs **unchanged** on the real KITTI raw dataset (64-beam
+Velodyne + camera + OXTS ego-motion). A `KittiRawReader` turns a drive into the
+identical `Frame` objects, so nothing in detection / fusion / tracking /
+prediction changes — only the data source. Numbers below are on drive
+`2011_09_26_0014` (314 frames, 1142 tracklet poses, dense city traffic).
+
+**1. Tracking & prediction quality (GT-replay).** Replaying the tracklet labels
+as noisy detections isolates the tracking + prediction stages on *real* ego
+motion — the world-frame MOT stays locked through the car's actual turns:
+
+| Metric      | Value | | Metric           | Value    |
+|-------------|-------|-|------------------|----------|
+| MOTA        | 0.641 | | Precision        | 0.795    |
+| MOTP (IoU)  | 0.822 | | Recall           | 0.864    |
+| ID switches | **1** | | Frames / objects | 314/1142 |
+
+<p align="center">
+  <img src="docs/screenshots/demo_kitti.gif" width="640" alt="KITTI raw BEV perception demo"/>
+</p>
+
+**2. Detection on real clutter — why fusion matters.** The classical geometric
+detector, tuned on clean synthetic scenes, is *flooded* by urban clutter
+(buildings, vegetation and poles all form car-sized clusters). Wiring in a stock
+**YOLO camera detector** as a camera-LiDAR **fusion gate** — drop any LiDAR
+cluster inside the image that no camera detection confirms — is a *learned*
+detector rescuing precision on real data. Scored inside the camera frustum
+(KITTI's standard annotation region):
+
+| Detector (camera FOV)          | Precision | Recall | False positives | MOTA   |
+|--------------------------------|-----------|--------|-----------------|--------|
+| Classical LiDAR only           | 0.051     | 0.251  | 5198            | −4.40  |
+| **+ YOLO camera-LiDAR gate**   | **0.533** | 0.181  | **177**         | **+0.02** |
+
+The camera gate cuts false positives by **97 %** and lifts precision **10×**,
+flipping MOTA positive. Recall drops — the gate can only *reject*, never add, and
+is capped by the geometric clusterer's own recall. That ceiling is precisely why
+production stacks reach for a learned 3D detector; the pluggable `Detector`
+interface exists so one drops straight in.
+
+Reproduce:
+
+```bash
+# tracking/prediction on real data (GT-replay) + BEV GIF
+python tools/run_kitti_demo.py --root data/kitti --drive 14 --detector gt \
+    --gif docs/screenshots/demo_kitti.gif --report metrics_kitti.json
+# classical detector vs. YOLO camera-LiDAR fusion gate (needs the [yolo] extra + a torch env)
+python tools/run_kitti_demo.py --root data/kitti --drive 14 --detector lidar --fov-eval
+python tools/run_kitti_demo.py --root data/kitti --drive 14 --detector fusion
+```
+
 ## Component summary
 
 | Stage      | Default implementation                                    | Key deps            |
@@ -84,6 +136,7 @@ carla_av_perception/
 ├── src/av_perception/       # ROS 2 rclpy nodes wrapping perception_core
 ├── src/av_bringup/          # ROS 2 launch files, params, RViz config
 ├── tools/run_demo.py        # offline end-to-end demo + BEV GIF + metrics
+├── tools/run_kitti_demo.py  # same pipeline on real KITTI raw + honest CLEAR-MOT
 ├── docs/                    # screenshots, architecture notes
 └── .github/workflows/ci.yml # test (py3.9–3.11) · lint · smoke matrix
 ```
@@ -96,6 +149,7 @@ carla_av_perception/
 | Offline demo + CI | BEV renderer, GIF, CLEAR-MOT report, GitHub Actions | ✅ done |
 | ROS 2 layer | Custom msgs, rclpy nodes, launch + RViz visualization | ✅ done |
 | CARLA layer | Sensor bridge, NPC traffic, record → replay dataset | ✅ done |
+| Real-data (KITTI) | `KittiRawReader`, GT-replay tracking, YOLO camera-LiDAR fusion gate | ✅ done |
 
 ## Quickstart
 

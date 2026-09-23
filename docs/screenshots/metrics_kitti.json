@@ -1,0 +1,17 @@
+{
+  "dataset": "kitti_raw",
+  "date": "2011_09_26",
+  "drive": 14,
+  "detector": "gt",
+  "fov_eval": false,
+  "frames": 314,
+  "gt_count": 1142,
+  "tp": 987,
+  "fp": 254,
+  "fn": 155,
+  "id_switches": 1,
+  "precision": 0.7953,
+  "recall": 0.8643,
+  "mota": 0.641,
+  "motp": 0.8222
+}

@@ -1,0 +1,17 @@
+{
+  "dataset": "kitti_raw",
+  "date": "2011_09_26",
+  "drive": 14,
+  "detector": "lidar",
+  "fov_eval": true,
+  "frames": 314,
+  "gt_count": 1118,
+  "tp": 281,
+  "fp": 5198,
+  "fn": 837,
+  "id_switches": 1,
+  "precision": 0.0513,
+  "recall": 0.2513,
+  "mota": -4.3989,
+  "motp": 0.5773
+}

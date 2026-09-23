@@ -63,6 +63,7 @@ class LateFusionConfig:
     iou_threshold: float = 0.3     # min 2D IoU to accept a camera<->LiDAR match
     score_boost: float = 0.3       # confidence added to fused (camera-confirmed) boxes
     overwrite_label: bool = True   # let the camera class override the size heuristic
+    require_camera: bool = False   # drop in-FOV LiDAR boxes with no camera support
 
 
 class LateFusion:
@@ -85,7 +86,7 @@ class LateFusion:
 
         fused: List[Detection] = []
         for det in lidar_detections:
-            best_iou, best_cam_det = 0.0, None
+            best_iou, best_cam_det, in_fov = 0.0, None, False
             for cam, cam_dets in camera_detections.items():
                 if not calib.has_camera(cam):
                     continue
@@ -95,6 +96,7 @@ class LateFusion:
                 )
                 if box2d is None:
                     continue
+                in_fov = True  # the box lands inside this camera's image
                 for cd in cam_dets:
                     iou = box2d.iou(cd.box)
                     if iou > best_iou:
@@ -109,6 +111,11 @@ class LateFusion:
                     Detection(box=det.box, score=score, label=label, source="fusion",
                               num_points=det.num_points, attributes=attrs)
                 )
+            elif self.cfg.require_camera and in_fov:
+                # A LiDAR cluster inside the camera image that no detector confirms
+                # is treated as clutter and dropped (precision gate). Boxes outside
+                # every camera FOV are kept — the camera cannot vouch for them.
+                continue
             else:
                 fused.append(det)
         return fused

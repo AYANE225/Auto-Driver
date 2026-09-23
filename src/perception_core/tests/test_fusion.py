@@ -56,3 +56,37 @@ def test_box2d_iou():
     a = Box2D(0, 0, 10, 10)
     b = Box2D(5, 0, 15, 10)
     assert a.iou(b) == 1.0 / 3.0
+
+
+def test_require_camera_drops_unconfirmed_in_fov_box():
+    """A LiDAR cluster inside the image that no camera detection backs is clutter."""
+    from perception_core.fusion.late_fusion import LateFusionConfig
+
+    calib = _front_camera_calib()
+    box = Box3D(12, 1, 0, 4, 2, 1.5, 0.0)  # projects into the image
+    lidar_dets = [Detection(box=box, score=0.4, source="lidar_cluster")]
+    gated = LateFusion(LateFusionConfig(require_camera=True)).fuse(lidar_dets, {"front": []}, calib)
+    assert gated == []  # dropped: in FOV, no camera support
+
+
+def test_require_camera_keeps_out_of_fov_box():
+    """The forward camera cannot vouch for a box behind the ego, so keep it."""
+    from perception_core.fusion.late_fusion import LateFusionConfig
+
+    calib = _front_camera_calib()
+    box = Box3D(-12, 0, 0, 4, 2, 1.5, 0.0)  # behind the camera -> not in FOV
+    lidar_dets = [Detection(box=box, score=0.4, source="lidar_cluster")]
+    gated = LateFusion(LateFusionConfig(require_camera=True)).fuse(lidar_dets, {"front": []}, calib)
+    assert len(gated) == 1 and gated[0].source == "lidar_cluster"
+
+
+def test_require_camera_keeps_confirmed_box():
+    from perception_core.fusion.late_fusion import LateFusionConfig
+
+    calib = _front_camera_calib()
+    box = Box3D(12, 1, 0, 4, 2, 1.5, 0.0)
+    box2d = project_box_to_image(box, calib.lidar_to_cam["front"], calib.intrinsics["front"], (640, 480))
+    lidar_dets = [Detection(box=box, score=0.4, source="lidar_cluster")]
+    cam_dets = {"front": [Detection2D(box=box2d, score=0.9, label=ObjectClass.CAR, camera="front")]}
+    gated = LateFusion(LateFusionConfig(require_camera=True)).fuse(lidar_dets, cam_dets, calib)
+    assert len(gated) == 1 and gated[0].label is ObjectClass.CAR and gated[0].source == "fusion"
