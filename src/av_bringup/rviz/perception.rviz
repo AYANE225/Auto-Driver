@@ -1,0 +1,65 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /PointCloud21
+        - /MarkerArray1
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Color: 160; 160; 164
+      Cell Size: 5
+      Plane Cell Count: 20
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz_default_plugins/PointCloud2
+      Name: PointCloud2
+      Enabled: true
+      Topic:
+        Value: /lidar/points
+        Depth: 5
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+      Style: Points
+      Size (Pixels): 2
+      Color: 120; 140; 160
+      Color Transformer: FlatColor
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Name: MarkerArray
+      Enabled: true
+      Topic:
+        Value: /perception_node/markers
+        Depth: 10
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+      Value: true
+  Global Options:
+    Fixed Frame: map
+    Background Color: 16; 20; 24
+    Frame Rate: 30
+  Enabled: true
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Distance: 70
+      Focal Point:
+        X: 20
+        Y: 0
+        Z: 0
+      Pitch: 0.9
+      Yaw: 3.14
+Window Geometry:
+  Height: 800
+  Width: 1200
+
