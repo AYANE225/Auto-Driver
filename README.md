@@ -162,12 +162,38 @@ python tools/run_kitti_demo.py --root data/kitti --drive 14 --detector lidar --f
 python tools/run_kitti_demo.py --root data/kitti --drive 14 --detector fusion
 ```
 
+## Camera-only front-end (optional VGGT)
+
+A pluggable **camera → pseudo-LiDAR** front-end lets the *same* pipeline run with
+no LiDAR at all. `VggtLidarDetector` feeds images to the **public**
+[VGGT](https://github.com/facebookresearch/vggt) model (Visual Geometry Grounded
+Transformer, CVPR 2025), turns its dense 3D point map into an `(N, 4)`
+pseudo-LiDAR sweep, and hands that to the existing RANSAC-ground + DBSCAN
+clusterer — so detection, tracking and prediction downstream are unchanged. Swap
+the sensor, keep the stack.
+
+- **Optional & isolated.** `torch` and the `vggt` package are lazy-imported and
+  live behind the `vggt` extra, so `perception_core` and its CI stay torch-free.
+  The torch-free post-processing (point-map → ego-frame cloud, with confidence
+  filtering and the camera→ego axis transform) is unit-tested; the
+  detector↔clusterer composition is tested with a mocked backend.
+- **Honest limits.** Monocular geometry is recovered up to scale (pass `--scale`
+  or use multi-view input); this integrates a *public pretrained* model, it is
+  not a bespoke learned 3D detector.
+
+```bash
+pip install 'src/perception_core[vggt,viz]'   # torch + public VGGT + matplotlib
+python tools/run_vggt_demo.py --images path/to/frames --tracker imm \
+    --gif outputs/vggt_demo.gif --scale 1.0
+```
+
 ## Component summary
 
 | Stage      | Default implementation                                    | Key deps            |
 |------------|-----------------------------------------------------------|---------------------|
 | Detection  | `LidarClusterDetector` — RANSAC ground + DBSCAN + PCA box | scikit-learn        |
 | Detection  | `YoloCameraDetector` — optional 2D camera detector        | ultralytics *(opt)* |
+| Detection  | `VggtLidarDetector` — public VGGT camera→pseudo-LiDAR      | torch, vggt *(opt)* |
 | Detection  | `GroundTruthDetector` — replay for tests / CI / demo      | –                   |
 | Fusion     | `LateFusion` — project 3D→image, 2D-IoU label transfer    | –                   |
 | Tracking   | `MultiObjectTracker` — CV Kalman **or** IMM (CV+CT) + Hungarian, optional Mahalanobis gating | scipy |
@@ -187,6 +213,7 @@ carla_av_perception/
 ├── tools/run_kitti_demo.py  # same pipeline on real KITTI raw + honest CLEAR-MOT
 ├── tools/benchmark.py       # per-stage latency / throughput + optional real-time budget gate
 ├── tools/eval_prediction.py # ADE/FDE prediction accuracy on an analytic manoeuvre bank
+├── tools/run_vggt_demo.py   # optional camera-only demo: public VGGT pseudo-LiDAR → pipeline
 ├── docs/                    # screenshots, architecture notes
 └── .github/workflows/ci.yml # test (py3.9–3.11) · lint · smoke · bench matrix
 ```
@@ -195,7 +222,7 @@ carla_av_perception/
 
 | Layer | Description | Status |
 |-------|-------------|--------|
-| `perception_core` | Detection / fusion / tracking (CV + IMM) / prediction + ADE/FDE & latency benchmarks + 58 unit tests | ✅ done |
+| `perception_core` | Detection (LiDAR · YOLO fusion · VGGT camera front-end) / tracking (CV + IMM) / prediction + ADE/FDE & latency benchmarks + 66 unit tests | ✅ done |
 | Offline demo + CI | BEV renderer, GIF, CLEAR-MOT report, latency budget gate, GitHub Actions | ✅ done |
 | ROS 2 layer | Custom msgs, rclpy nodes, launch + RViz visualization | ✅ done |
 | CARLA layer | Sensor bridge, NPC traffic, record → replay dataset | ✅ done |
@@ -248,7 +275,7 @@ python carla/replay_demo.py --dataset carla/data/urban --gif docs/screenshots/de
 
 Python · NumPy · SciPy · scikit-learn · ROS 2 Humble (rclpy) · RViz2 ·
 rosbag2 · CARLA · Matplotlib · pytest · GitHub Actions. Optional: ultralytics
-(YOLO), Open3D.
+(YOLO), VGGT (torch, camera→pseudo-LiDAR), Open3D.
 
 ## License
 
