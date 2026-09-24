@@ -54,6 +54,10 @@ def main() -> None:
     ap.add_argument("--conf-percentile", type=float, default=50.0,
                     help="drop VGGT points below this confidence percentile")
     ap.add_argument("--checkpoint", default="facebook/VGGT-1B")
+    ap.add_argument("--weights", default="",
+                    help="local VGGT .pt state-dict for offline use (skips the HF download)")
+    ap.add_argument("--input-width", type=int, default=518,
+                    help="resize width fed to VGGT (both dims are rounded to a multiple of 14)")
     ap.add_argument("--out", default="outputs")
     ap.add_argument("--gif", default=None, help="output GIF path (default <out>/vggt_demo.gif)")
     ap.add_argument("--fps", type=int, default=10)
@@ -62,7 +66,8 @@ def main() -> None:
 
     images = load_images(args.images, args.max_frames)
     detector = VggtLidarDetector(config=VggtConfig(
-        checkpoint=args.checkpoint, scale=args.scale, conf_percentile=args.conf_percentile,
+        checkpoint=args.checkpoint, weights=args.weights, input_width=args.input_width,
+        scale=args.scale, conf_percentile=args.conf_percentile,
     ))
     pipe = PerceptionPipeline(
         detector=detector,

@@ -43,9 +43,11 @@ _CAM_TO_EGO = np.array([[0.0, 0.0, 1.0],
 
 @dataclass
 class VggtConfig:
-    checkpoint: str = "facebook/VGGT-1B"  # public HuggingFace checkpoint
+    checkpoint: str = "facebook/VGGT-1B"  # public HuggingFace checkpoint (used if `weights` unset)
+    weights: str = ""                     # optional local .pt state-dict (offline / air-gapped)
     device: str = ""                      # "", "cpu", "cuda", "cuda:0" ("" = auto)
     dtype: str = "bfloat16"               # inference autocast dtype on CUDA
+    input_width: int = 518                # resize width; VGGT needs both dims divisible by 14
     conf_percentile: float = 50.0         # drop the least-confident pixels below this pct
     max_points: int = 60000              # subsample the point map to keep clustering fast
     scale: float = 1.0                    # multiply recovered geometry (monocular is up-to-scale)
@@ -129,7 +131,17 @@ class VggtDepthBackend:
         self._torch = torch
         device = self.cfg.device or ("cuda" if torch.cuda.is_available() else "cpu")
         self._device = device
-        self._model = VGGT.from_pretrained(self.cfg.checkpoint).to(device).eval()
+        if self.cfg.weights:
+            # Offline path: build the public architecture and load a local state dict
+            # (e.g. the published VGGT-1B checkpoint) without any network access.
+            model = VGGT()
+            state = torch.load(self.cfg.weights, map_location="cpu")
+            if isinstance(state, dict) and "model" in state and "aggregator.camera_token" not in state:
+                state = state["model"]
+            model.load_state_dict(state)
+        else:
+            model = VGGT.from_pretrained(self.cfg.checkpoint)
+        self._model = model.to(device).eval()
 
     def infer_cloud(self, images: List[np.ndarray]) -> np.ndarray:
         """Run VGGT on ``images`` and return an ``(N, 4)`` ego-frame cloud."""
@@ -140,6 +152,15 @@ class VggtDepthBackend:
         # (S, 3, H, W) float tensor in [0, 1]
         batch = np.stack([np.asarray(im, dtype=np.float32) / 255.0 for im in images])
         tensor = torch.from_numpy(batch).permute(0, 3, 1, 2).to(self._device)
+        # VGGT requires both spatial dims divisible by the patch size (14); resize to
+        # the configured width and the aspect-matched height so arbitrary camera
+        # frames (e.g. 1242x375 KITTI) are accepted unchanged by the caller.
+        _, _, H, W = tensor.shape
+        tw = max(int(self.cfg.input_width) - int(self.cfg.input_width) % 14, 14)
+        th = max(int(round(H * tw / W / 14.0)) * 14, 14)
+        if (H, W) != (th, tw):
+            tensor = torch.nn.functional.interpolate(
+                tensor, size=(th, tw), mode="bilinear", align_corners=False)
         autocast = (
             torch.autocast("cuda", dtype=getattr(torch, self.cfg.dtype))
             if self._device.startswith("cuda") else torch.autocast("cpu", enabled=False)

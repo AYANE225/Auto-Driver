@@ -172,11 +172,26 @@ pseudo-LiDAR sweep, and hands that to the existing RANSAC-ground + DBSCAN
 clusterer — so detection, tracking and prediction downstream are unchanged. Swap
 the sensor, keep the stack.
 
+<p align="center">
+  <img src="docs/screenshots/demo_vggt.gif" width="640" alt="Camera-only VGGT pseudo-LiDAR perception demo"/>
+</p>
+
+> **Real run**, not a mock: the public `VGGT-1B` checkpoint lifts KITTI drive
+> `2011_09_26_0014` *camera* frames (no LiDAR) into a pseudo-LiDAR sweep (gray),
+> which the unchanged clusterer → IMM tracker → predictor turns into confirmed
+> tracks with velocity arrows and multi-modal forecasts. The fan-shaped cloud and
+> radially-elongated boxes are the honest signature of monocular, up-to-scale
+> geometry — this is a qualitative *camera-only* showcase of the pluggable
+> front-end, not a metric detector.
+
 - **Optional & isolated.** `torch` and the `vggt` package are lazy-imported and
   live behind the `vggt` extra, so `perception_core` and its CI stay torch-free.
   The torch-free post-processing (point-map → ego-frame cloud, with confidence
   filtering and the camera→ego axis transform) is unit-tested; the
   detector↔clusterer composition is tested with a mocked backend.
+- **Offline-friendly.** Pass `--weights model.pt` to load a local checkpoint and
+  skip the HuggingFace download; arbitrary image sizes are auto-resized to VGGT's
+  patch grid.
 - **Honest limits.** Monocular geometry is recovered up to scale (pass `--scale`
   or use multi-view input); this integrates a *public pretrained* model, it is
   not a bespoke learned 3D detector.
@@ -184,7 +199,7 @@ the sensor, keep the stack.
 ```bash
 pip install 'src/perception_core[vggt,viz]'   # torch + public VGGT + matplotlib
 python tools/run_vggt_demo.py --images path/to/frames --tracker imm \
-    --gif outputs/vggt_demo.gif --scale 1.0
+    --gif outputs/vggt_demo.gif --scale 25 --weights /path/to/VGGT-1B.pt
 ```
 
 ## Component summary
