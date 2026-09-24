@@ -27,6 +27,30 @@ unit tests, CI, and a one-command visual demo.
 > turning car (blue) is followed cleanly through its arc while every track emits
 > a dotted multi-modal forecast. Reproduce with `--tracker imm`.
 
+## Highlights
+
+- **Full AV perception stack** — detection → sensor fusion → multi-object
+  tracking → motion prediction, from raw sensor sweeps to ROS 2 topics.
+- **Framework-agnostic core** — pure NumPy / SciPy / scikit-learn, so **66 unit
+  tests** run torch-free on CPU in seconds under **GitHub Actions CI** (py3.9–3.11).
+- **Swappable detector backends** — classical LiDAR clustering, a YOLO
+  camera-LiDAR fusion gate, a public-VGGT camera-only front-end, and GT replay,
+  all behind one `Detector` interface.
+- **Proven on real data** — the *same* pipeline runs unchanged on KITTI raw; the
+  YOLO fusion gate cuts false positives **97 %** and lifts precision **10×**.
+- **Honest, measured evaluation** — CLEAR-MOT, ADE / FDE, and a per-stage latency
+  benchmark wired into CI as a real-time budget gate. No cherry-picked numbers.
+
+## Architecture
+
+<p align="center">
+  <img src="docs/screenshots/architecture.png" width="900" alt="System architecture: inputs → perception_core (detection/fusion/tracking/prediction) → ROS 2 outputs"/>
+</p>
+
+Detections are lifted into the world frame via the ego pose before tracking, so
+track states and forecasts live in a stable global frame even while the ego
+vehicle moves.
+
 ## Design goals
 
 - **Framework-agnostic core.** `perception_core` depends only on
@@ -42,23 +66,6 @@ unit tests, CI, and a one-command visual demo.
   precision / recall) and prediction metrics (ADE / FDE / minADE / minFDE /
   miss-rate) so results are measured, not asserted — plus a latency benchmark
   with an optional real-time budget gate wired into CI.
-
-## Architecture
-
-```
-                        ┌──────────────────────── perception_core (pure Python) ────────────────────────┐
- CARLA / rosbag2        │                                                                                │
-  LiDAR + cameras  ──►  │  Detection ──► (Camera-LiDAR Fusion) ──► Tracking ──► Prediction ──► Output    │
-  (sensor_msgs)         │  RANSAC+DBSCAN     2D IoU label          KF + Hungarian   CV / CTRV             │
-                        │  +PCA box / YOLO   transfer              AB3DMOT lifecycle multi-modal          │
-                        └───────────────────────────────────┬────────────────────────────────────────────┘
-                                                             │
-              ROS 2 Humble nodes (rclpy)  ◄──────────────────┘   RViz2 / Foxglove MarkerArray viz
-```
-
-Detections are lifted into the world frame via the ego pose before tracking, so
-track states and forecasts live in a stable global frame even while the ego
-vehicle moves.
 
 ## Results (offline demo, LiDAR detector)
 
@@ -145,6 +152,10 @@ detector rescuing precision on real data. Scored inside the camera frustum
 | Classical LiDAR only           | 0.051     | 0.251  | 5198            | −4.40  |
 | **+ YOLO camera-LiDAR gate**   | **0.533** | 0.181  | **177**         | **+0.02** |
 
+<p align="center">
+  <img src="docs/screenshots/kitti_fusion_gate.png" width="620" alt="Precision and total false positives: classical LiDAR vs. YOLO camera-LiDAR gate on KITTI drive 0014"/>
+</p>
+
 The camera gate cuts false positives by **97 %** and lifts precision **10×**,
 flipping MOTA positive. Recall drops — the gate can only *reject*, never add, and
 is capped by the geometric clusterer's own recall. That ceiling is precisely why
@@ -229,6 +240,7 @@ carla_av_perception/
 ├── tools/benchmark.py       # per-stage latency / throughput + optional real-time budget gate
 ├── tools/eval_prediction.py # ADE/FDE prediction accuracy on an analytic manoeuvre bank
 ├── tools/run_vggt_demo.py   # optional camera-only demo: public VGGT pseudo-LiDAR → pipeline
+├── tools/make_docs_figures.py # regenerate the README architecture + results figures
 ├── docs/                    # screenshots, architecture notes
 └── .github/workflows/ci.yml # test (py3.9–3.11) · lint · smoke · bench matrix
 ```
