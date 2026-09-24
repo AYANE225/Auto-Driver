@@ -1,6 +1,5 @@
 import numpy as np
 
-from perception_core.common.types import ObjectClass
 from perception_core.detection.mock import GroundTruthDetector
 from perception_core.io.synthetic import generate_frames, make_default_scene
 from perception_core.pipeline import PerceptionPipeline
@@ -53,3 +52,14 @@ def test_pipeline_is_deterministic():
         return sorted((t.track_id, round(t.box.x, 3)) for t in out.tracks)
 
     assert run() == run()
+
+
+def test_pipeline_records_stage_latencies():
+    frames = generate_frames(make_default_scene(), num_frames=5, dt=0.1, seed=6)
+    pipe = PerceptionPipeline(detector=GroundTruthDetector(seed=0))
+    for f in frames:
+        pipe.process(f)
+    timings = pipe.last_timings
+    assert set(timings) == {"detect_ms", "fuse_ms", "track_ms", "predict_ms", "total_ms"}
+    assert timings["total_ms"] > 0.0
+    assert all(v >= 0.0 for v in timings.values())

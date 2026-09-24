@@ -58,3 +58,25 @@ jobs:
         with:
           name: demo-report
           path: /tmp/report.json
+
+  bench:
+    name: latency budget + prediction metrics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ./src/perception_core
+      - name: Latency benchmark (asserts a loose real-time budget)
+        run: >-
+          python tools/benchmark.py --detector gt --frames 80 --warmup 5
+          --budget-ms 150 --report /tmp/latency.json
+      - name: Prediction accuracy (ADE / FDE) on the analytic scenario bank
+        run: python tools/eval_prediction.py --report /tmp/prediction.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-reports
+          path: |
+            /tmp/latency.json
+            /tmp/prediction.json

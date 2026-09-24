@@ -8,7 +8,8 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 from perception_core.common.geometry import bev_iou
-from perception_core.common.types import Box3D, Detection, ObjectClass, Track, TrackState
+from perception_core.common.types import Detection, ObjectClass, Track, TrackState
+from perception_core.tracking.imm import IMMFilter
 from perception_core.tracking.kalman import ConstantVelocityKF
 
 
@@ -22,6 +23,18 @@ class TrackerConfig:
     yaw_smoothing: float = 0.5     # EMA weight on new heading measurement
     dim_smoothing: float = 0.3     # EMA weight on new size measurement
     max_history: int = 50
+    motion_model: str = "cv"       # "cv" (constant velocity) | "imm" (CV + constant-turn IMM)
+    gating: bool = False           # gate associations by Mahalanobis distance
+    gate_chi2: float = 9.21        # chi-square gate, 2 DOF ~ 99% acceptance
+    turn_rate_noise: float = 0.3   # IMM constant-turn yaw-rate spectral density
+    transition_stay: float = 0.95  # IMM Markov self-transition probability
+
+
+def _make_filter(cfg: TrackerConfig):
+    if cfg.motion_model == "imm":
+        return IMMFilter(cfg.process_noise, cfg.measurement_noise,
+                         cfg.turn_rate_noise, cfg.transition_stay)
+    return ConstantVelocityKF(cfg.process_noise, cfg.measurement_noise)
 
 
 def _angle_ema(prev: float, meas: float, alpha: float) -> float:
@@ -33,7 +46,7 @@ class _TrackData:
     def __init__(self, det: Detection, track_id: int, cfg: TrackerConfig, t: float) -> None:
         self.id = track_id
         self.cfg = cfg
-        self.kf = ConstantVelocityKF(cfg.process_noise, cfg.measurement_noise)
+        self.kf = _make_filter(cfg)
         self.kf.init_state([det.box.x, det.box.y])
         self.box = det.box.copy()
         self.label_votes = {det.label: det.score}
@@ -75,6 +88,9 @@ class _TrackData:
         self.hits += 1
         self.time_since_update = 0
         self._estimate_turn_rate()
+        imm_yaw_rate = getattr(self.kf, "yaw_rate", None)
+        if imm_yaw_rate is not None:  # IMM estimates the turn rate directly
+            self.yaw_rate_est = float(imm_yaw_rate)
         self.history.append(self.kf.position)
         if len(self.history) > self.cfg.max_history:
             self.history.pop(0)
@@ -99,15 +115,24 @@ class _TrackData:
             history=[h.copy() for h in self.history],
         )
 def associate(
-    tracks: List[_TrackData], detections: List[Detection], iou_threshold: float
+    tracks: List[_TrackData], detections: List[Detection], iou_threshold: float,
+    gate_chi2: float = None,
 ) -> Tuple[List[Tuple[int, int]], List[int], List[int]]:
-    """Optimally match tracks to detections by BEV IoU (Hungarian algorithm)."""
+    """Optimally match tracks to detections by BEV IoU (Hungarian algorithm).
+
+    When ``gate_chi2`` is set, a track/detection pair is only eligible if the
+    detection centre falls inside the track's Mahalanobis gate; gated-out pairs
+    are given zero affinity so the assignment never picks them.
+    """
     if not tracks or not detections:
         return [], list(range(len(tracks))), list(range(len(detections)))
 
     iou = np.zeros((len(tracks), len(detections)))
     for i, trk in enumerate(tracks):
         for j, det in enumerate(detections):
+            if gate_chi2 is not None and hasattr(trk.kf, "gating_distance"):
+                if trk.kf.gating_distance([det.box.x, det.box.y]) > gate_chi2:
+                    continue  # outside the gate -> leave affinity at 0 (disallowed)
             iou[i, j] = bev_iou(trk.box, det.box)
 
     row, col = linear_sum_assignment(-iou)
@@ -139,7 +164,10 @@ class MultiObjectTracker:
         for trk in self.tracks:
             trk.predict(timestamp)
 
-        matches, un_trk, un_det = associate(self.tracks, detections, self.cfg.iou_threshold)
+        matches, un_trk, un_det = associate(
+            self.tracks, detections, self.cfg.iou_threshold,
+            gate_chi2=self.cfg.gate_chi2 if self.cfg.gating else None,
+        )
         for t_idx, d_idx in matches:
             self.tracks[t_idx].update(detections[d_idx])
         for d_idx in un_det:

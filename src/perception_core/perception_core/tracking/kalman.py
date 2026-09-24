@@ -56,6 +56,13 @@ class ConstantVelocityKF:
         self.P = (np.eye(4) - K @ self.H) @ self.P
         return self.x.copy()
 
+    def gating_distance(self, pos: np.ndarray) -> float:
+        """Squared Mahalanobis distance of a measurement to the predicted state."""
+        z = np.asarray(pos, dtype=float)[:2]
+        y = z - self.H @ self.x
+        S = self.H @ self.P @ self.H.T + self.R
+        return float(y @ np.linalg.inv(S) @ y)
+
     @property
     def position(self) -> np.ndarray:
         return self.x[:2].copy()

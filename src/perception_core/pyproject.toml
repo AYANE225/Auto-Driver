@@ -38,5 +38,12 @@ addopts = "-ra -q"
 line-length = 100
 target-version = "py39"
 
+[tool.ruff.lint]
+# Classic default rule set (pycodestyle errors + pyflakes), pinned explicitly so
+# linting stays deterministic across ruff releases. `l`/`w`/`h` are the standard
+# 3D bounding-box dimension names used throughout the code, so E741 is waived.
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E741"]
+
 [tool.mypy]
 ignore_missing_imports = true

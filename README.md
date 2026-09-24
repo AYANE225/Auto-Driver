@@ -19,6 +19,14 @@ unit tests, CI, and a one-command visual demo.
 > ground-truth boxes, colored confirmed tracks with IDs / velocity arrows /
 > history trails, and dotted multi-modal trajectory forecasts.
 
+<p align="center">
+  <img src="docs/screenshots/demo_prediction.gif" width="640" alt="IMM tracking with multi-modal trajectory forecasts"/>
+</p>
+
+> IMM (constant-velocity + constant-turn) tracking on a 100-frame scene: the
+> turning car (blue) is followed cleanly through its arc while every track emits
+> a dotted multi-modal forecast. Reproduce with `--tracker imm`.
+
 ## Design goals
 
 - **Framework-agnostic core.** `perception_core` depends only on
@@ -31,7 +39,9 @@ unit tests, CI, and a one-command visual demo.
 - **Fail-safe fusion.** Camera-LiDAR fusion degrades gracefully to LiDAR-only
   when no calibrated camera is present.
 - **Honest evaluation.** Built-in CLEAR-MOT metrics (MOTA / MOTP / ID-switches /
-  precision / recall) so results are measured, not asserted.
+  precision / recall) and prediction metrics (ADE / FDE / minADE / minFDE /
+  miss-rate) so results are measured, not asserted — plus a latency benchmark
+  with an optional real-time budget gate wired into CI.
 
 ## Architecture
 
@@ -62,6 +72,43 @@ pedestrian), classical LiDAR detector — matched to ground truth by BEV IoU:
 | ID switches | 1     | | Frames        | 60    |
 
 Reproduce: `python tools/run_demo.py --frames 60 --detector lidar --report metrics.json`
+(add `--tracker imm` for the IMM bank — see [`demo_imm.gif`](docs/screenshots/demo_imm.gif)).
+
+### Prediction accuracy (ADE / FDE)
+
+Physics forecasters scored on a self-contained analytic manoeuvre bank (3 s
+horizon, 0.5 s step). The bank deliberately mixes manoeuvres the
+constant-velocity / constant-turn-rate models fit exactly with ones they
+provably cannot, so the report shows *honest* error instead of a rigged score:
+
+| Scenario      | ADE (m)  | FDE (m)  | Miss | Note                          |
+|---------------|----------|----------|------|-------------------------------|
+| straight      | 0.00     | 0.00     | 0.00 | CV exact                      |
+| steady_turn   | 0.00     | 0.00     | 0.00 | CTRV exact                    |
+| accelerate    | 4.74     | 11.25    | 1.00 | unmodelled a = 2.5 m/s²       |
+| lane_change   | 2.04     | 3.50     | 1.00 | unmodelled 3.5 m lateral shift |
+| **Overall**   | **1.70** | **3.69** | **0.50** | 4 scenarios               |
+
+Reproduce: `python tools/eval_prediction.py --report prediction.json`
+
+### Real-time latency
+
+Per-stage latency of the full detect → fuse → track → predict loop over a
+120-frame synthetic sequence (5 actors, ground-truth detector; single CPU core,
+machine-dependent). Both motion models clear the 10 Hz sensor rate by two orders
+of magnitude:
+
+| Tracker      | detect | track | predict | end-to-end (mean / p95) | throughput |
+|--------------|--------|-------|---------|-------------------------|------------|
+| CV           | 0.01   | 0.74  | 0.05    | 0.80 / 0.85 ms          | ~1250 Hz   |
+| IMM (CV+CT)  | 0.01   | 0.97  | 0.05    | 1.03 / 1.06 ms          | ~970 Hz    |
+
+The IMM bank runs two filters plus the interaction/mixing step, so it costs
+~30 % more tracking time in exchange for turn-rate estimation and constant-turn
+forecasting. CI runs the benchmark with a loose `--budget-ms 150` gate, so a
+performance regression fails the build.
+
+Reproduce: `python tools/benchmark.py --detector gt --tracker imm --frames 120 --budget-ms 150`
 
 ## Real-data validation (KITTI raw)
 
@@ -123,8 +170,9 @@ python tools/run_kitti_demo.py --root data/kitti --drive 14 --detector fusion
 | Detection  | `YoloCameraDetector` — optional 2D camera detector        | ultralytics *(opt)* |
 | Detection  | `GroundTruthDetector` — replay for tests / CI / demo      | –                   |
 | Fusion     | `LateFusion` — project 3D→image, 2D-IoU label transfer    | –                   |
-| Tracking   | `MultiObjectTracker` — constant-velocity KF + Hungarian   | scipy               |
+| Tracking   | `MultiObjectTracker` — CV Kalman **or** IMM (CV+CT) + Hungarian, optional Mahalanobis gating | scipy |
 | Prediction | `MotionPredictor` — CV / CTRV, multi-modal                | –                   |
+| Evaluation | CLEAR-MOT · ADE/FDE prediction metrics · latency benchmark | numpy              |
 
 ## Repository layout
 
@@ -135,18 +183,20 @@ carla_av_perception/
 ├── src/av_perception_msgs/  # ROS 2 custom interfaces (tracked / predicted objects)
 ├── src/av_perception/       # ROS 2 rclpy nodes wrapping perception_core
 ├── src/av_bringup/          # ROS 2 launch files, params, RViz config
-├── tools/run_demo.py        # offline end-to-end demo + BEV GIF + metrics
+├── tools/run_demo.py        # offline end-to-end demo + BEV GIF + metrics (--tracker cv|imm)
 ├── tools/run_kitti_demo.py  # same pipeline on real KITTI raw + honest CLEAR-MOT
+├── tools/benchmark.py       # per-stage latency / throughput + optional real-time budget gate
+├── tools/eval_prediction.py # ADE/FDE prediction accuracy on an analytic manoeuvre bank
 ├── docs/                    # screenshots, architecture notes
-└── .github/workflows/ci.yml # test (py3.9–3.11) · lint · smoke matrix
+└── .github/workflows/ci.yml # test (py3.9–3.11) · lint · smoke · bench matrix
 ```
 
 ## Status
 
 | Layer | Description | Status |
 |-------|-------------|--------|
-| `perception_core` | Detection / fusion / tracking / prediction + 41 unit tests | ✅ done |
-| Offline demo + CI | BEV renderer, GIF, CLEAR-MOT report, GitHub Actions | ✅ done |
+| `perception_core` | Detection / fusion / tracking (CV + IMM) / prediction + ADE/FDE & latency benchmarks + 58 unit tests | ✅ done |
+| Offline demo + CI | BEV renderer, GIF, CLEAR-MOT report, latency budget gate, GitHub Actions | ✅ done |
 | ROS 2 layer | Custom msgs, rclpy nodes, launch + RViz visualization | ✅ done |
 | CARLA layer | Sensor bridge, NPC traffic, record → replay dataset | ✅ done |
 | Real-data (KITTI) | `KittiRawReader`, GT-replay tracking, YOLO camera-LiDAR fusion gate | ✅ done |

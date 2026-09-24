@@ -1,0 +1,15 @@
+{
+  "detector": "lidar",
+  "tracker": "imm",
+  "frames": 80,
+  "dt": 0.1,
+  "gt_count": 400,
+  "tp": 296,
+  "fp": 19,
+  "fn": 104,
+  "id_switches": 1,
+  "precision": 0.9397,
+  "recall": 0.74,
+  "mota": 0.69,
+  "motp": 0.7658
+}

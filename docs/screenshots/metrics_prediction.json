@@ -1,0 +1,15 @@
+{
+  "detector": "gt",
+  "tracker": "imm",
+  "frames": 100,
+  "dt": 0.1,
+  "gt_count": 500,
+  "tp": 490,
+  "fp": 0,
+  "fn": 10,
+  "id_switches": 0,
+  "precision": 1.0,
+  "recall": 0.98,
+  "mota": 0.98,
+  "motp": 0.9095
+}

@@ -6,7 +6,7 @@ by ID, with velocity arrows and history trails) and predicted trajectories.
 """
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple
+from typing import Sequence, Tuple
 
 import matplotlib
 
@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.patches import Polygon as MplPolygon  # noqa: E402
 
-from perception_core.common.types import Frame, ObjectClass, PerceptionOutput  # noqa: E402
+from perception_core.common.types import Frame, PerceptionOutput  # noqa: E402
 
 _TRACK_PALETTE = [
     "#e6194B", "#3cb44b", "#4363d8", "#f58231", "#911eb4", "#42d4f4",

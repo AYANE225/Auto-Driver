@@ -12,18 +12,18 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from typing import List
 
 from perception_core.detection.mock import GroundTruthDetector
 from perception_core.eval.metrics import evaluate_tracking
 from perception_core.io.synthetic import generate_frames, make_default_scene
-from perception_core.pipeline import PerceptionPipeline
+from perception_core.pipeline import PerceptionPipeline, PipelineConfig
+from perception_core.tracking.mot import TrackerConfig
 
 
-def build_pipeline(detector: str) -> PerceptionPipeline:
-    if detector == "gt":
-        return PerceptionPipeline(detector=GroundTruthDetector(position_noise=0.1, seed=0))
-    return PerceptionPipeline()  # default: classical LiDAR clustering
+def build_pipeline(detector: str, tracker: str = "cv") -> PerceptionPipeline:
+    cfg = PipelineConfig(tracker=TrackerConfig(motion_model=tracker))
+    det = GroundTruthDetector(position_noise=0.1, seed=0) if detector == "gt" else None
+    return PerceptionPipeline(detector=det, config=cfg)  # det=None -> LiDAR clustering
 
 
 def main() -> None:
@@ -32,6 +32,8 @@ def main() -> None:
     ap.add_argument("--dt", type=float, default=0.1)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--detector", choices=["lidar", "gt"], default="lidar")
+    ap.add_argument("--tracker", choices=["cv", "imm"], default="cv",
+                    help="motion model: 'cv' constant-velocity or 'imm' CV+CT interacting bank")
     ap.add_argument("--out", default="outputs")
     ap.add_argument("--gif", default=None, help="path for the animated GIF (default <out>/demo.gif)")
     ap.add_argument("--fps", type=int, default=10)
@@ -40,7 +42,7 @@ def main() -> None:
     args = ap.parse_args()
 
     frames = generate_frames(make_default_scene(), num_frames=args.frames, dt=args.dt, seed=args.seed)
-    pipe = build_pipeline(args.detector)
+    pipe = build_pipeline(args.detector, args.tracker)
 
     gt_frames, track_frames, images = [], [], []
     renderer = None
@@ -56,7 +58,8 @@ def main() -> None:
             images.append(renderer.draw(frame, out))
 
     metrics = evaluate_tracking(gt_frames, track_frames, iou_threshold=0.3)
-    report = {"detector": args.detector, "frames": args.frames, "dt": args.dt, **metrics.as_dict()}
+    report = {"detector": args.detector, "tracker": args.tracker,
+              "frames": args.frames, "dt": args.dt, **metrics.as_dict()}
     print("=== tracking metrics ===")
     for k, v in report.items():
         print(f"  {k:12s}: {v}")

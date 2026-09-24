@@ -11,7 +11,8 @@ live in a stable global frame even while the ego vehicle moves.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from time import perf_counter
+from typing import Dict, List, Optional
 
 from perception_core.common.geometry import transform_box
 from perception_core.common.types import Detection, Frame, PerceptionOutput
@@ -47,13 +48,17 @@ class PerceptionPipeline:
         self.predictor = predictor or MotionPredictor(self.cfg.predictor)
         self.fusion = fusion or LateFusion(self.cfg.fusion)
         self.camera_detector = camera_detector  # optional, e.g. YoloCameraDetector
+        self.last_timings: Dict[str, float] = {}  # per-stage latency (ms) of the last frame
 
     def process(self, frame: Frame) -> PerceptionOutput:
+        t0 = perf_counter()
         detections: List[Detection] = self.detector.detect(frame)
+        t_detect = perf_counter()
 
         if self.camera_detector is not None and frame.images:
             cam_dets = self.camera_detector.detect_2d(frame)
             detections = self.fusion.fuse(detections, cam_dets, frame.calib)
+        t_fuse = perf_counter()
 
         if self.cfg.track_in_world and frame.ego_pose is not None:
             detections = [
@@ -64,7 +69,17 @@ class PerceptionPipeline:
             ]
 
         tracks = self.tracker.update(detections, frame.timestamp)
+        t_track = perf_counter()
         predictions = self.predictor.predict_all(tracks)
+        t_predict = perf_counter()
+
+        self.last_timings = {
+            "detect_ms": (t_detect - t0) * 1e3,
+            "fuse_ms": (t_fuse - t_detect) * 1e3,
+            "track_ms": (t_track - t_fuse) * 1e3,   # incl. world-frame lift
+            "predict_ms": (t_predict - t_track) * 1e3,
+            "total_ms": (t_predict - t0) * 1e3,
+        }
         return PerceptionOutput(
             timestamp=frame.timestamp, frame_id=frame.frame_id,
             detections=detections, tracks=tracks, predictions=predictions,
