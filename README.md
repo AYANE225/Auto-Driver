@@ -31,7 +31,7 @@ unit tests, CI, and a one-command visual demo.
 
 - **Full AV perception stack** — detection → sensor fusion → multi-object
   tracking → motion prediction, from raw sensor sweeps to ROS 2 topics.
-- **Framework-agnostic core** — pure NumPy / SciPy / scikit-learn, so **66 unit
+- **Framework-agnostic core** — pure NumPy / SciPy / scikit-learn, so **75 unit
   tests** run torch-free on CPU in seconds under **GitHub Actions CI** (py3.9–3.11).
 - **Swappable detector backends** — classical LiDAR clustering, a YOLO
   camera-LiDAR fusion gate, a public-VGGT camera-only front-end, and GT replay,
@@ -241,6 +241,9 @@ carla_av_perception/
 ├── tools/eval_prediction.py # ADE/FDE prediction accuracy on an analytic manoeuvre bank
 ├── tools/run_vggt_demo.py   # optional camera-only demo: public VGGT pseudo-LiDAR → pipeline
 ├── tools/make_docs_figures.py # regenerate the README architecture + results figures
+├── Dockerfile               # framework-agnostic core image (tests / demo / benchmarks)
+├── docker/Dockerfile.ros2   # ROS 2 Humble workspace image (colcon build + launch)
+├── Makefile                 # make test · lint · demo · bench · figures · docker-*
 ├── docs/                    # screenshots, architecture notes
 └── .github/workflows/ci.yml # test (py3.9–3.11) · lint · smoke · bench matrix
 ```
@@ -249,7 +252,7 @@ carla_av_perception/
 
 | Layer | Description | Status |
 |-------|-------------|--------|
-| `perception_core` | Detection (LiDAR · YOLO fusion · VGGT camera front-end) / tracking (CV + IMM) / prediction + ADE/FDE & latency benchmarks + 66 unit tests | ✅ done |
+| `perception_core` | Detection (LiDAR · YOLO fusion · VGGT camera front-end) / tracking (CV + IMM) / prediction + ADE/FDE & latency benchmarks + 75 unit tests | ✅ done |
 | Offline demo + CI | BEV renderer, GIF, CLEAR-MOT report, latency budget gate, GitHub Actions | ✅ done |
 | ROS 2 layer | Custom msgs, rclpy nodes, launch + RViz visualization | ✅ done |
 | CARLA layer | Sensor bridge, NPC traffic, record → replay dataset | ✅ done |
@@ -272,6 +275,25 @@ pytest -q src/perception_core
 
 > Inside a **sourced ROS 2 environment**, disable the incompatible ROS pytest
 > plugins first: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q`.
+
+Common tasks are wrapped in a `Makefile` — run `make help` for the full list
+(`make test`, `make lint`, `make demo`, `make bench`, `make figures`, …).
+
+### Run in Docker
+
+No local Python or ROS needed — the two images reproduce the CPU pipeline and
+the full ROS 2 graph respectively:
+
+```bash
+# Framework-agnostic core: offline demo, tests and benchmarks (mirrors CI)
+docker build -t auto-driver-core .
+docker run --rm auto-driver-core                       # -> offline demo + metrics
+docker run --rm auto-driver-core pytest -q src/perception_core/tests
+
+# Full ROS 2 Humble graph (custom msgs + nodes + launch), built with colcon
+docker build -f docker/Dockerfile.ros2 -t auto-driver-ros .
+docker run --rm auto-driver-ros                        # headless launch (no RViz)
+```
 
 ### Run the ROS 2 graph
 
@@ -301,8 +323,8 @@ python carla/replay_demo.py --dataset carla/data/urban --gif docs/screenshots/de
 ## Tech stack
 
 Python · NumPy · SciPy · scikit-learn · ROS 2 Humble (rclpy) · RViz2 ·
-rosbag2 · CARLA · Matplotlib · pytest · GitHub Actions. Optional: ultralytics
-(YOLO), VGGT (torch, camera→pseudo-LiDAR), Open3D.
+rosbag2 · CARLA · Matplotlib · pytest · Docker · Make · GitHub Actions.
+Optional: ultralytics (YOLO), VGGT (torch, camera→pseudo-LiDAR), Open3D.
 
 ## License
 

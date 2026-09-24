@@ -100,7 +100,7 @@ def architecture(out_path: str) -> None:
                                 linewidth=1.4, edgecolor="#2ea043", facecolor="#0f1b12", zorder=1))
     ax.text(65, 9.6, "Engineering rigor", ha="center", va="center", color="#3fb950",
             fontsize=10.5, fontweight="bold")
-    ax.text(65, 6.0, "CLEAR-MOT  ·  ADE / FDE  ·  latency budget gate  ·  66 unit tests  ·  GitHub Actions CI (py3.9–3.11)",
+    ax.text(65, 6.0, "CLEAR-MOT  ·  ADE / FDE  ·  latency budget gate  ·  75 unit tests  ·  GitHub Actions CI (py3.9–3.11)",
             ha="center", va="center", color=MUT, fontsize=8.8, family="monospace")
 
     fig.tight_layout(pad=0.6)

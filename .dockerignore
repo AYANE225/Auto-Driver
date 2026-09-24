@@ -1,0 +1,27 @@
+# Keep the Docker build context small and reproducible.
+.git
+.github
+**/__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+coverage.xml
+
+# ROS 2 colcon build output (rebuilt inside the image)
+build/
+install/
+log/
+
+# Local datasets, model weights and generated run outputs
+data/
+outputs/
+*.pt
+*.onnx
+*.npz
+
+# Editor / OS noise
+.vscode
+.idea
+.DS_Store

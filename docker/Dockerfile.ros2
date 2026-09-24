@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+#
+# ROS 2 Humble image: builds the colcon workspace (custom msgs + perception
+# node + bringup) on top of the framework-agnostic core, so the full graph runs
+# in a container with no ROS install on the host.
+#
+#   docker build -f docker/Dockerfile.ros2 -t auto-driver-ros .
+#   docker run --rm auto-driver-ros                       # headless launch (no RViz)
+#
+#   # With RViz, sharing the host X socket (Linux):
+#   xhost +local:
+#   docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+#       auto-driver-ros \
+#       bash -lc "ros2 launch av_bringup perception.launch.py"
+FROM ros:humble-ros-base
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_BREAK_SYSTEM_PACKAGES=1
+
+WORKDIR /ws
+COPY src ./src
+
+# Resolve and install the declared ROS dependencies of the three packages
+# (rosidl generators for the custom msgs, rclpy, visualization_msgs, ...).
+RUN . /opt/ros/humble/setup.sh && \
+    apt-get update && \
+    rosdep update && \
+    rosdep install --from-paths src --ignore-src -r -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# The rclpy nodes import perception_core; install it into the ROS Python env
+# (pulls numpy / scipy / scikit-learn). matplotlib is optional for viz helpers.
+RUN pip install ./src/perception_core matplotlib
+
+# Build the custom messages, the perception node and the bringup package.
+RUN . /opt/ros/humble/setup.sh && \
+    colcon build --packages-select av_perception_msgs av_perception av_bringup
+
+# Source ROS + the workspace overlay for interactive shells.
+RUN echo 'source /opt/ros/humble/setup.bash' >> /root/.bashrc && \
+    echo 'source /ws/install/setup.bash'  >> /root/.bashrc
+
+# Headless by default: synthetic LiDAR publisher + perception node, no RViz.
+CMD ["bash", "-lc", \
+     "source /opt/ros/humble/setup.bash && source /ws/install/setup.bash && \
+      ros2 launch av_bringup perception.launch.py rviz:=false"]
