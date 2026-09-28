@@ -243,6 +243,33 @@ async function main() {
     assert.match(csv, /^scene,metric,raw_points,voxel_0.2m\n/);
     const baseline = await read("benchmarks/highway_voxel_0.2.json");
     assert.ok(csv.includes(`,${baseline.latency_ms.total_ms.mean}\n`));
+    await page.locator("#native-tracking details").evaluate((el) => { el.open = true; });
+    for (const scene of ["urban", "highway"]) {
+      await page.locator(`[data-native-scene="${scene}"]`).click();
+      const ablation = await read(`benchmarks/tracking/${scene}_ablation.json`);
+      const oldPipeline = await read(`benchmarks/tracking/${scene}_python_original.json`);
+      const newPipeline = await read(`benchmarks/tracking/${scene}_cpp_threshold.json`);
+      const a = ablation.results.python_original;
+      const b = ablation.results.cpp_original;
+      assert.equal(b.matches_captured_states, true);
+      assert.equal(b.max_state_error, 0);
+      assert.equal(await text("#native-python-time"), `${a.mean_ms.toFixed(1)} ms`);
+      assert.equal(await text("#native-cpp-time"), `${b.mean_ms.toFixed(1)} ms`);
+      assert.ok((await text("#native-speedup")).includes(`${(a.mean_ms / b.mean_ms).toFixed(1)}×`));
+      for (const report of [oldPipeline, newPipeline]) {
+        const t = report.latency_ms.total_ms;
+        assert.ok((await text("#native-pipeline")).includes(`${t.mean.toFixed(1)} / ${t.p95.toFixed(1)}`));
+      }
+      for (const [index, result] of Object.values(ablation.results).entries()) {
+        const cells = await page.locator("#native-ablation tr").nth(index).locator("td").allTextContents();
+        assert.deepEqual(cells, [result.mean_ms.toFixed(2), result.quality.hota.hota.toFixed(4),
+          result.quality.identity.idf1.toFixed(4), result.quality.mota.toFixed(4)]);
+      }
+      assert.equal(newPipeline.iou_backend, "cpp");
+      assert.equal(await page.locator("#native-ablation-report").getAttribute("href"),
+        `benchmarks/tracking/${scene}_ablation.json`);
+    }
+    await screenshot("native-tracking", "#native-tracking");
     const report = await read("benchmarks/forecasting/metrics.json");
     assert.equal(await page.locator("#forecast-town option").count(), 3);
     for (const town of ["test_pooled", "Town05_Opt", "Town10HD_Opt"]) {
@@ -363,10 +390,15 @@ async function main() {
     failed.on("pageerror", (e) => fallbackErrors.push(String(e)));
     await failed.route("**/benchmarks/urban_voxel_0.json", (r) => r.abort());
     await failed.route("**/assets/forecast_examples.json", (r) => r.abort());
+    await failed.route("**/benchmarks/tracking/urban_ablation.json", (r) => r.abort());
     await failed.goto(base);
     await failed.waitForFunction(() =>
       document.getElementById("data-status").textContent.includes("读取失败"),
     );
+    await failed.waitForFunction(() =>
+      document.getElementById("native-status").textContent.includes("读取失败"),
+    );
+    assert.ok(await failed.locator('[data-native-scene="highway"]').isDisabled());
     assert.ok(
       (await failed.locator("#example-description").textContent()).includes(
         "读取失败",
@@ -407,9 +439,10 @@ async function main() {
     const nojs = await browser.newPage({ javaScriptEnabled: false });
     await nojs.goto(base);
     assert.equal(await nojs.locator("#raw-latency").textContent(), "888.5 ms");
+    assert.equal(await nojs.locator("#native-cpp-time").textContent(), "3.2 ms");
     assert.ok(await nojs.locator("noscript").isVisible());
     console.log(
-      "PASS: 42 frames, image synchronization, layers, selection, zoom/pan, downloads, forecasts, video, commands, mobile and failure fallbacks.",
+      "PASS: C++ reports and ablations, 42 frames, image synchronization, layers, selection, zoom/pan, downloads, forecasts, video, commands, mobile and failure fallbacks.",
     );
   } finally {
     await browser.close();

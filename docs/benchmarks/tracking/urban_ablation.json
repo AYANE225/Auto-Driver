@@ -1,0 +1,366 @@
+{
+  "dataset": "urban",
+  "frames": 400,
+  "repeats": 3,
+  "warmup_frames": 5,
+  "scope": "tracker.update only; excludes detection, IO, projection and evaluation",
+  "cache_sha256": "58bd5b824ebef03964e9bb1ee8129c92fc18f1fc00572b769ad163edcf4b31ce",
+  "sensor_files_sha256": "3a7de1d8958cf5b8656dc70b1b1f065e74ab5570f82b9035355a1516b1208e76",
+  "baseline_commit": "7142c920962a4a7751239ff22fb0ed22ba37ca50",
+  "environment": {
+    "python": "3.11.15",
+    "numpy": "2.4.6",
+    "platform": "Linux-6.8.0-139-generic-x86_64-with-glibc2.39",
+    "threads": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1"
+    }
+  },
+  "results": {
+    "python_original": {
+      "config": {
+        "iou_threshold": 0.1,
+        "max_age": 5,
+        "min_hits": 3,
+        "process_noise": 2.0,
+        "measurement_noise": 0.5,
+        "yaw_smoothing": 0.5,
+        "dim_smoothing": 0.3,
+        "max_history": 50,
+        "motion_model": "imm",
+        "gating": false,
+        "gate_chi2": 9.21,
+        "turn_rate_noise": 0.3,
+        "transition_stay": 0.95,
+        "iou_backend": "python",
+        "box_yaw_period": 6.283185307179586,
+        "matching_policy": "post_filter"
+      },
+      "iou_backend": "python",
+      "quality": {
+        "frames": 400,
+        "gt_count": 2407,
+        "tp": 537,
+        "fp": 428,
+        "fn": 1870,
+        "id_switches": 2,
+        "precision": 0.5565,
+        "recall": 0.2231,
+        "mota": 0.0445,
+        "motp": 0.517,
+        "hota": {
+          "hota": 0.184,
+          "deta": 0.1123,
+          "assa": 0.317,
+          "loca": 0.6515,
+          "det_re": 0.1311,
+          "det_pr": 0.327,
+          "ass_re": 0.3548,
+          "ass_pr": 0.5773
+        },
+        "identity": {
+          "idf1": 0.1726,
+          "idp": 0.3016,
+          "idr": 0.1209,
+          "idtp": 291,
+          "idfp": 674,
+          "idfn": 2116
+        }
+      },
+      "matches_captured_states": true,
+      "max_state_error": 0.0,
+      "timing_runs": [
+        {
+          "mean_ms": 44.89265029625142,
+          "p95_ms": 80.16422549262639
+        },
+        {
+          "mean_ms": 44.645256318647085,
+          "p95_ms": 79.7097921022214
+        },
+        {
+          "mean_ms": 44.599946179203215,
+          "p95_ms": 79.39546831184997
+        }
+      ],
+      "mean_ms": 44.71261759803391,
+      "mean_p95_ms": 79.75649530223258
+    },
+    "cpp_original": {
+      "config": {
+        "iou_threshold": 0.1,
+        "max_age": 5,
+        "min_hits": 3,
+        "process_noise": 2.0,
+        "measurement_noise": 0.5,
+        "yaw_smoothing": 0.5,
+        "dim_smoothing": 0.3,
+        "max_history": 50,
+        "motion_model": "imm",
+        "gating": false,
+        "gate_chi2": 9.21,
+        "turn_rate_noise": 0.3,
+        "transition_stay": 0.95,
+        "iou_backend": "cpp",
+        "box_yaw_period": 6.283185307179586,
+        "matching_policy": "post_filter"
+      },
+      "iou_backend": "cpp",
+      "quality": {
+        "frames": 400,
+        "gt_count": 2407,
+        "tp": 537,
+        "fp": 428,
+        "fn": 1870,
+        "id_switches": 2,
+        "precision": 0.5565,
+        "recall": 0.2231,
+        "mota": 0.0445,
+        "motp": 0.517,
+        "hota": {
+          "hota": 0.184,
+          "deta": 0.1123,
+          "assa": 0.317,
+          "loca": 0.6515,
+          "det_re": 0.1311,
+          "det_pr": 0.327,
+          "ass_re": 0.3548,
+          "ass_pr": 0.5773
+        },
+        "identity": {
+          "idf1": 0.1726,
+          "idp": 0.3016,
+          "idr": 0.1209,
+          "idtp": 291,
+          "idfp": 674,
+          "idfn": 2116
+        }
+      },
+      "matches_captured_states": true,
+      "max_state_error": 0.0,
+      "timing_runs": [
+        {
+          "mean_ms": 3.2613045314939906,
+          "p95_ms": 4.628869600128382
+        },
+        {
+          "mean_ms": 3.1728429560655655,
+          "p95_ms": 4.60411625681445
+        },
+        {
+          "mean_ms": 3.2151592877705264,
+          "p95_ms": 4.573303763754665
+        }
+      ],
+      "mean_ms": 3.216435591776694,
+      "mean_p95_ms": 4.602096540232499
+    },
+    "cpp_axis": {
+      "config": {
+        "iou_threshold": 0.1,
+        "max_age": 5,
+        "min_hits": 3,
+        "process_noise": 2.0,
+        "measurement_noise": 0.5,
+        "yaw_smoothing": 0.5,
+        "dim_smoothing": 0.3,
+        "max_history": 50,
+        "motion_model": "imm",
+        "gating": false,
+        "gate_chi2": 9.21,
+        "turn_rate_noise": 0.3,
+        "transition_stay": 0.95,
+        "iou_backend": "cpp",
+        "box_yaw_period": 3.141592653589793,
+        "matching_policy": "post_filter"
+      },
+      "iou_backend": "cpp",
+      "quality": {
+        "frames": 400,
+        "gt_count": 2407,
+        "tp": 541,
+        "fp": 433,
+        "fn": 1866,
+        "id_switches": 2,
+        "precision": 0.5554,
+        "recall": 0.2248,
+        "mota": 0.044,
+        "motp": 0.5146,
+        "hota": {
+          "hota": 0.1839,
+          "deta": 0.1118,
+          "assa": 0.3179,
+          "loca": 0.6515,
+          "det_re": 0.131,
+          "det_pr": 0.3237,
+          "ass_re": 0.3556,
+          "ass_pr": 0.577
+        },
+        "identity": {
+          "idf1": 0.1715,
+          "idp": 0.2977,
+          "idr": 0.1205,
+          "idtp": 290,
+          "idfp": 684,
+          "idfn": 2117
+        }
+      },
+      "matches_captured_states": false,
+      "max_state_error": 2.356194490192345,
+      "timing_runs": [
+        {
+          "mean_ms": 3.2252079854377462,
+          "p95_ms": 4.523339599836618
+        },
+        {
+          "mean_ms": 3.1626100875908816,
+          "p95_ms": 4.4698687619529665
+        },
+        {
+          "mean_ms": 3.16168230286316,
+          "p95_ms": 4.481594834942371
+        }
+      ],
+      "mean_ms": 3.1831667919639295,
+      "mean_p95_ms": 4.491601065577318
+    },
+    "cpp_threshold": {
+      "config": {
+        "iou_threshold": 0.1,
+        "max_age": 5,
+        "min_hits": 3,
+        "process_noise": 2.0,
+        "measurement_noise": 0.5,
+        "yaw_smoothing": 0.5,
+        "dim_smoothing": 0.3,
+        "max_history": 50,
+        "motion_model": "imm",
+        "gating": false,
+        "gate_chi2": 9.21,
+        "turn_rate_noise": 0.3,
+        "transition_stay": 0.95,
+        "iou_backend": "cpp",
+        "box_yaw_period": 6.283185307179586,
+        "matching_policy": "thresholded"
+      },
+      "iou_backend": "cpp",
+      "quality": {
+        "frames": 400,
+        "gt_count": 2407,
+        "tp": 537,
+        "fp": 428,
+        "fn": 1870,
+        "id_switches": 2,
+        "precision": 0.5565,
+        "recall": 0.2231,
+        "mota": 0.0445,
+        "motp": 0.517,
+        "hota": {
+          "hota": 0.184,
+          "deta": 0.1123,
+          "assa": 0.317,
+          "loca": 0.6515,
+          "det_re": 0.1311,
+          "det_pr": 0.327,
+          "ass_re": 0.3548,
+          "ass_pr": 0.5773
+        },
+        "identity": {
+          "idf1": 0.1726,
+          "idp": 0.3016,
+          "idr": 0.1209,
+          "idtp": 291,
+          "idfp": 674,
+          "idfn": 2116
+        }
+      },
+      "matches_captured_states": false,
+      "max_state_error": 18.385727409056596,
+      "timing_runs": [
+        {
+          "mean_ms": 3.218745415487999,
+          "p95_ms": 4.537101427558809
+        },
+        {
+          "mean_ms": 3.174588489169373,
+          "p95_ms": 4.507777385879307
+        },
+        {
+          "mean_ms": 3.1746736285571435,
+          "p95_ms": 4.490199394058434
+        }
+      ],
+      "mean_ms": 3.1893358444048387,
+      "mean_p95_ms": 4.511692735832184
+    },
+    "cpp_axis_threshold": {
+      "config": {
+        "iou_threshold": 0.1,
+        "max_age": 5,
+        "min_hits": 3,
+        "process_noise": 2.0,
+        "measurement_noise": 0.5,
+        "yaw_smoothing": 0.5,
+        "dim_smoothing": 0.3,
+        "max_history": 50,
+        "motion_model": "imm",
+        "gating": false,
+        "gate_chi2": 9.21,
+        "turn_rate_noise": 0.3,
+        "transition_stay": 0.95,
+        "iou_backend": "cpp",
+        "box_yaw_period": 3.141592653589793,
+        "matching_policy": "thresholded"
+      },
+      "iou_backend": "cpp",
+      "quality": {
+        "frames": 400,
+        "gt_count": 2407,
+        "tp": 541,
+        "fp": 433,
+        "fn": 1866,
+        "id_switches": 2,
+        "precision": 0.5554,
+        "recall": 0.2248,
+        "mota": 0.044,
+        "motp": 0.5146,
+        "hota": {
+          "hota": 0.1839,
+          "deta": 0.1118,
+          "assa": 0.3179,
+          "loca": 0.6515,
+          "det_re": 0.131,
+          "det_pr": 0.3237,
+          "ass_re": 0.3556,
+          "ass_pr": 0.577
+        },
+        "identity": {
+          "idf1": 0.1715,
+          "idp": 0.2977,
+          "idr": 0.1205,
+          "idtp": 290,
+          "idfp": 684,
+          "idfn": 2117
+        }
+      },
+      "matches_captured_states": false,
+      "max_state_error": 2.356194490192345,
+      "timing_runs": [
+        {
+          "mean_ms": 3.2338800698613066,
+          "p95_ms": 4.572836577426642
+        },
+        {
+          "mean_ms": 3.171709123586269,
+          "p95_ms": 4.525715846102685
+        },
+        {
+          "mean_ms": 3.2199322204753944,
+          "p95_ms": 4.548843658994883
+        }
+      ],
+      "mean_ms": 3.208507137974323,
+      "mean_p95_ms": 4.54913202750807
+    }
+  }
+}

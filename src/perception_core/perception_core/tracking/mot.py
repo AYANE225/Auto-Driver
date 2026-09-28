@@ -7,7 +7,7 @@ from typing import List, Tuple
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from perception_core.common.geometry import bev_iou
+from perception_core.common.iou import bev_iou_matrix, resolve_iou_backend
 from perception_core.common.types import Detection, ObjectClass, Track, TrackState
 from perception_core.tracking.imm import IMMFilter
 from perception_core.tracking.kalman import ConstantVelocityKF
@@ -28,6 +28,19 @@ class TrackerConfig:
     gate_chi2: float = 9.21        # chi-square gate, 2 DOF ~ 99% acceptance
     turn_rate_noise: float = 0.3   # IMM constant-turn yaw-rate spectral density
     transition_stay: float = 0.95  # IMM Markov self-transition probability
+    iou_backend: str = "auto"      # auto / python reference / cpp (required)
+    box_yaw_period: float = 2*np.pi  # pi optionally treats PCA box axes as unoriented
+    matching_policy: str = "thresholded"  # thresholded / post_filter (older assignment)
+
+    def __post_init__(self):
+        if self.iou_backend not in ("auto", "python", "cpp"):
+            raise ValueError("iou_backend must be auto, python or cpp")
+        if self.matching_policy not in ("thresholded", "post_filter"):
+            raise ValueError("matching_policy must be thresholded or post_filter")
+        if self.box_yaw_period not in (np.pi, 2*np.pi):
+            raise ValueError("box_yaw_period must be pi or 2*pi")
+        if not 0 < self.iou_threshold <= 1:
+            raise ValueError("iou_threshold must be in (0, 1]")
 
 
 def _make_filter(cfg: TrackerConfig):
@@ -37,8 +50,8 @@ def _make_filter(cfg: TrackerConfig):
     return ConstantVelocityKF(cfg.process_noise, cfg.measurement_noise)
 
 
-def _angle_ema(prev: float, meas: float, alpha: float) -> float:
-    delta = (meas - prev + np.pi) % (2 * np.pi) - np.pi
+def _angle_ema(prev: float, meas: float, alpha: float, period=2*np.pi) -> float:
+    delta = (meas - prev + period/2) % period - period/2
     return float((prev + alpha * delta + np.pi) % (2 * np.pi) - np.pi)
 
 
@@ -82,7 +95,8 @@ class _TrackData:
         self.box.l = (1 - a_dim) * self.box.l + a_dim * det.box.l
         self.box.w = (1 - a_dim) * self.box.w + a_dim * det.box.w
         self.box.h = (1 - a_dim) * self.box.h + a_dim * det.box.h
-        self.box.yaw = _angle_ema(self.box.yaw, det.box.yaw, self.cfg.yaw_smoothing)
+        self.box.yaw = _angle_ema(self.box.yaw, det.box.yaw, self.cfg.yaw_smoothing,
+                                  self.cfg.box_yaw_period)
         self.label_votes[det.label] = self.label_votes.get(det.label, 0.0) + det.score
         self.score = 0.7 * self.score + 0.3 * det.score
         self.hits += 1
@@ -117,25 +131,30 @@ class _TrackData:
 def associate(
     tracks: List[_TrackData], detections: List[Detection], iou_threshold: float,
     gate_chi2: float = None,
+    iou_backend: str = "auto", matching_policy: str = "thresholded",
 ) -> Tuple[List[Tuple[int, int]], List[int], List[int]]:
-    """Optimally match tracks to detections by BEV IoU (Hungarian algorithm).
+    """Maximize summed eligible IoU, allowing tracks/detections to stay unmatched.
 
-    When ``gate_chi2`` is set, a track/detection pair is only eligible if the
-    detection centre falls inside the track's Mahalanobis gate; gated-out pairs
-    are given zero affinity so the assignment never picks them.
+    Thresholded matching gives ineligible edges zero weight before assignment,
+    then discards these zero-weight slots. Since valid weights are positive, this
+    represents optional matching without a larger dummy-node matrix. It does not
+    prioritize match count over total IoU. ``post_filter`` retains the old policy
+    for ablations: apply the IoU threshold only after maximizing all gated IoUs.
     """
     if not tracks or not detections:
         return [], list(range(len(tracks))), list(range(len(detections)))
 
-    iou = np.zeros((len(tracks), len(detections)))
+    iou = bev_iou_matrix([t.box for t in tracks], [d.box for d in detections], iou_backend)
     for i, trk in enumerate(tracks):
-        for j, det in enumerate(detections):
-            if gate_chi2 is not None and hasattr(trk.kf, "gating_distance"):
-                if trk.kf.gating_distance([det.box.x, det.box.y]) > gate_chi2:
-                    continue  # outside the gate -> leave affinity at 0 (disallowed)
-            iou[i, j] = bev_iou(trk.box, det.box)
+        if gate_chi2 is not None:
+            for j, det in enumerate(detections):
+                if hasattr(trk.kf, "gating_distance"):
+                    if trk.kf.gating_distance([det.box.x, det.box.y]) > gate_chi2:
+                        iou[i, j] = 0
 
-    row, col = linear_sum_assignment(-iou)
+    eligible = iou >= iou_threshold
+    affinity = np.where(eligible, iou, 0.0) if matching_policy == "thresholded" else iou
+    row, col = linear_sum_assignment(-affinity)
     matches, un_trk, un_det = [], [], []
     matched_t, matched_d = set(), set()
     for r, c in zip(row, col):
@@ -153,6 +172,7 @@ class MultiObjectTracker:
 
     def __init__(self, config: TrackerConfig = None) -> None:
         self.cfg = config or TrackerConfig()
+        self.iou_backend = resolve_iou_backend(self.cfg.iou_backend)
         self.tracks: List[_TrackData] = []
         self._next_id = 0
 
@@ -167,6 +187,7 @@ class MultiObjectTracker:
         matches, un_trk, un_det = associate(
             self.tracks, detections, self.cfg.iou_threshold,
             gate_chi2=self.cfg.gate_chi2 if self.cfg.gating else None,
+            iou_backend=self.iou_backend, matching_policy=self.cfg.matching_policy,
         )
         for t_idx, d_idx in matches:
             self.tracks[t_idx].update(detections[d_idx])
@@ -180,4 +201,3 @@ class MultiObjectTracker:
     @property
     def all_tracks(self) -> List[Track]:
         return [t.to_track() for t in self.tracks]
-

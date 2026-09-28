@@ -14,7 +14,7 @@
 
 [![Auto-Driver: camera and bird's-eye tracking on a CARLA urban recording](docs/assets/overview.jpg)](https://ayane225.github.io/Auto-Driver/#demo)
 
-A reusable Python core takes sensor frames through **detection → camera confirmation → world-frame tracking → motion prediction**. Dataset readers and ROS 2 nodes connect the same algorithms to CARLA recordings, KITTI raw and synthetic scenes. The project covers perception and forecasting; planning and vehicle control are outside its current scope.
+A reusable Python + C++ core takes sensor frames through **detection → camera confirmation → world-frame tracking → motion prediction**. Dataset readers and ROS 2 nodes connect the same algorithms to CARLA recordings, KITTI raw and synthetic scenes. The project covers perception and forecasting; planning and vehicle control are outside its current scope.
 
 | Measured improvement | Evaluation coverage | Engineering delivery |
 |---|---|---|
@@ -47,9 +47,27 @@ Profiling identified DBSCAN on the raw point cloud as the main urban bottleneck.
 
 Same 400-frame inputs, YOLOv8n fusion and IMM tracker; one run per setting. Pipeline latency excludes five warmup frames, loading, evaluation and rendering. YOLO runs on RTX 5090; BLAS/OpenMP thread counts are 1. Metrics use class-agnostic BEV IoU, stable actor IDs, a shared LiDAR XY region and front-camera FOV, including occluded GT. HOTA averages 19 thresholds; IDF1 uses IoU 0.5. These are project measurements.
 
-**Current limits:** recall remains low, highway quality decreases slightly with voxelization, and both optimized means exceed the 100 ms interval of a 10 Hz sensor. The synthetic latency check in CI does not establish sensor-pipeline real-time performance.
+**Limits of this historical comparison:** recall remains low and highway quality decreases slightly with voxelization. These measurements retain the older Python tracker; see the subsequent C++ comparison below. The synthetic latency check in CI does not establish sensor-pipeline real-time performance.
 
 [Full protocol, MOTA and reproduction commands](docs/benchmarks/README.md) · [Urban raw](docs/benchmarks/urban_voxel_0.json) / [voxel](docs/benchmarks/urban_voxel_0.2.json) · [Highway raw](docs/benchmarks/highway_voxel_0.json) / [voxel](docs/benchmarks/highway_voxel_0.2.json)
+
+## Native tracking geometry
+
+Optional C++14 / pybind11 batch BEV IoU reduces mean `tracker.update` time from
+44.7 to 3.2 ms in urban recordings and 81.1 to 3.0 ms on the highway (three runs,
+fixed detections). With the original association logic, confirmed track IDs,
+boxes and velocities match all 800 cached frames exactly.
+
+Fresh full-pipeline runs reduce mean / p95 from **130.2 / 171.8 to 89.3 / 104.0 ms**
+(urban) and **152.0 / 498.2 to 78.1 / 101.2 ms** (highway), with the same tracking
+metrics. The default now applies the IoU threshold before assignment; optional
+π-period box smoothing did not consistently improve metrics and remains opt-in.
+There is no measured accuracy gain. Pipeline timing excludes IO and evaluation;
+p95 still exceeds the 100 ms sensor interval. See the [full comparison](docs/benchmarks/tracking/README.md).
+
+Normal installation attempts native compilation; `iou_backend="auto"` falls
+back to Python when unavailable. Set `PERCEPTION_CORE_NO_NATIVE=1` when installing
+from a fresh checkout to disable compilation explicitly. CI tests both modes.
 
 ## Forecasting on held-out towns
 

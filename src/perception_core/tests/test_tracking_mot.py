@@ -54,3 +54,44 @@ def test_mot_deletes_after_max_age():
     for k in range(4, 10):
         tracker.update([], k * 0.1)
     assert len(tracker.all_tracks) == 0
+
+
+def test_unoriented_box_axis_does_not_rotate_on_pca_sign_flip():
+    from perception_core.common.geometry import bev_iou
+    tracker = MultiObjectTracker(TrackerConfig(min_hits=2, box_yaw_period=np.pi))
+    for frame in range(8):
+        detection = _det(0, 0)
+        detection.box.yaw = np.pi if frame % 2 else 0
+        tracks = tracker.update([detection], frame * .1)
+        if frame:
+            assert [t.track_id for t in tracks] == [0]
+            assert bev_iou(tracks[0].box, _det(0, 0).box) > .999999
+
+
+def test_rejected_edges_cannot_displace_a_valid_match(monkeypatch):
+    from perception_core.tracking import mot
+    from types import SimpleNamespace
+    tracks = [SimpleNamespace(box=_det(0, 0).box) for _ in range(2)]
+    detections = [_det(0, 0), _det(0, 0)]
+    monkeypatch.setattr(mot, "bev_iou_matrix", lambda *args: np.array([[.6, .59], [.59, 0]]))
+    assert mot.associate(tracks, detections, .6, matching_policy="thresholded") == ([(0, 0)], [1], [1])
+    assert mot.associate(tracks, detections, .6, matching_policy="post_filter") == ([], [0, 1], [0, 1])
+
+
+def test_thresholded_assignment_maximizes_iou_not_match_count(monkeypatch):
+    from perception_core.tracking import mot
+    from types import SimpleNamespace
+    tracks = [SimpleNamespace(box=_det(0, 0).box) for _ in range(2)]
+    detections = [_det(0, 0), _det(0, 0)]
+    monkeypatch.setattr(mot, "bev_iou_matrix", lambda *args: np.array([[.99, .4], [.4, 0]]))
+    assert mot.associate(tracks, detections, .3) == ([(0, 0)], [1], [1])
+
+
+def test_mahalanobis_rejection_stays_unmatched():
+    from perception_core.tracking.mot import associate, _TrackData
+    cfg = TrackerConfig()
+    track = _TrackData(_det(0, 0), 0, cfg, 0)
+    # Large overlapping boxes can still have an implausible centre displacement.
+    d = _det(3, 0)
+    d.box.l = track.box.l = 20
+    assert associate([track], [d], .1, gate_chi2=9.21) == ([], [0], [0])

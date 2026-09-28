@@ -1427,3 +1427,10 @@ summary {
     padding: 8px;
   }
 }
+
+#native-tracking .number-label {
+  font-size: clamp(24px, 3vw, 40px);
+}
+#native-tracking summary {
+  cursor: pointer;
+}

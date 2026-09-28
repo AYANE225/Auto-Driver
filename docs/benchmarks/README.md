@@ -5,6 +5,10 @@ weighted voxel clustering implementation and the recorded-trajectory evaluation.
 The [interactive project page](https://ayane225.github.io/Auto-Driver/) reads the
 JSON files directly. Values below are rounded only for presentation.
 
+The subsequent [C++ tracking comparison](tracking/README.md) measures native
+geometry and association changes separately. The voxel results below retain
+the older Python tracking implementation and are historical measurements.
+
 ## Replay: raw points versus weighted voxel clustering
 
 All four runs process the same 400 frames per scenario with YOLOv8n camera
@@ -55,6 +59,7 @@ for scene in urban highway; do
     python carla/replay_demo.py --dataset "carla/data/$scene" \
       --detector fusion --tracker imm --device cuda:0 --fov-eval \
       --voxel-size "$voxel" --no-video \
+      --iou-backend python --matching-policy post_filter --box-yaw-period 2pi \
       --report "outputs/comparison/${scene}_voxel_${voxel}.json"
   done
 done

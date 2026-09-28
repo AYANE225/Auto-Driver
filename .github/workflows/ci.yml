@@ -52,6 +52,8 @@ jobs:
           cache: pip
       - name: Install perception_core (test extras)
         run: pip install ./src/perception_core[test]
+      - name: Require the native backend
+        run: python -c 'from perception_core.common.iou import resolve_iou_backend; assert resolve_iou_backend("auto") == "cpp"'
       - name: Run pytest with coverage
         run: |
           pytest src/perception_core/tests -q \
@@ -62,6 +64,21 @@ jobs:
         with:
           name: coverage-xml
           path: coverage.xml
+
+  pure-python:
+    name: installation without native extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install the Python fallback
+        run: PERCEPTION_CORE_NO_NATIVE=1 pip install ./src/perception_core[test]
+      - name: Require fallback and run tests
+        run: |
+          python -c 'from perception_core.common.iou import resolve_iou_backend; assert resolve_iou_backend("auto") == "python"'
+          pytest src/perception_core/tests -q
 
   lint:
     name: ruff lint

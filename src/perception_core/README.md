@@ -33,6 +33,39 @@ for frame in generate_frames(make_default_scene(), num_frames=40):
 All detectors implement the same `Detector` interface, so backends are
 swappable without touching the pipeline.
 
+## Native tracking geometry
+
+Normal installation builds the optional `perception_core._geometry` extension
+with pybind11 and a C++14 compiler. Tracking uses its batch rotated BEV IoU:
+corners are cached per box, disjoint axis-aligned bounds are rejected, and
+overlaps use Sutherland–Hodgman polygon clipping in double precision. The Python
+reference and all evaluators remain available. Native execution releases the GIL.
+
+```bash
+pip install .
+python -c 'from perception_core.common.iou import resolve_iou_backend; print(resolve_iou_backend())'
+# Explicitly disable native compilation on a fresh source checkout:
+PERCEPTION_CORE_NO_NATIVE=1 pip install .
+```
+
+`TrackerConfig(iou_backend="auto")` selects C++ when available and Python
+otherwise. `"python"` selects the scalar reference; `"cpp"` requires a successful
+native build and raises an error if unavailable. Compilation failure permits a
+Python installation. The build environment needs pybind11 in both cases; there
+is no pybind11 runtime dependency. CARLA replay reports record the actual backend.
+
+Association defaults to `matching_policy="thresholded"`: only IoUs at or above
+the threshold contribute to assignment, maximizing their sum with unmatched
+objects allowed. This does not prioritize match count. `"post_filter"` reproduces
+the older solve-then-reject policy. Box smoothing keeps `box_yaw_period=2*pi` by
+default; optional `pi` smoothing respects the sign ambiguity of PCA box axes but
+did not consistently improve the recorded-scene metrics. Box orientation is
+separate from the velocity-derived motion heading.
+
+The repository's `tools/benchmark_tracking.py` captures fixed detections and
+compares five configurations, including native output equivalence and algorithm
+ablations. See `docs/benchmarks/tracking/README.md` for results and commands.
+
 `Frame.images` stores RGB images. LiDAR detections are transformed into world
 coordinates using `Frame.ego_pose` before tracking. CARLA and KITTI ground truth
 carry stable IDs in `Detection.attributes['gt_id']`; pass these IDs to tracking,

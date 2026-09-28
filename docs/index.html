@@ -24,6 +24,7 @@
     />
     <link rel="stylesheet" href="assets/site.css" />
     <script src="assets/site.js" defer></script>
+    <script src="assets/tracking.js" defer></script>
     <script src="assets/explorers.js" defer></script>
   </head>
   <body>
@@ -60,7 +61,7 @@
           <div>
             <h1>从传感器数据<br />到<em>可追踪的运动。</em></h1>
             <p class="hero-note">
-              检测、融合、跟踪与预测，连接到同一套 Python
+              检测、融合、跟踪与预测，连接到同一套 Python + C++
               核心。用实录场景展示系统，用可复现的评估说明效果。
             </p>
           </div>
@@ -77,13 +78,13 @@
           <a class="button primary" href="#explorer"
             >打开逐帧查看器 <span>↘</span></a
           ><a class="text-link" href="#demo">播放系统演示 ↓</a
-          ><span class="hero-stack">Python · CARLA · ROS 2 Humble</span>
+          ><span class="hero-stack">Python + C++ · CARLA · ROS 2 Humble</span>
         </div>
         <div class="stats">
           <div>
-            <strong>6.86<span>×</span></strong>
-            <p>城市回放流水线提速</p>
-            <small>0.2 m 体素聚类 · 平均耗时对照</small>
+            <strong>13.9<span>×</span></strong>
+            <p>城市跟踪计算提速</p>
+            <small>C++ 批量 IoU · 固定检测输入三轮均值</small>
           </div>
           <div>
             <strong>800</strong>
@@ -260,7 +261,7 @@
           个点供显示，检测仍使用原始输入。目标框与轨迹按评估区域和前视相机视野筛选。坐标为当前
           LiDAR 坐标系：x 向前、y 向左、z 向上，单位
           m。速度为世界系估计速度在当前 LiDAR
-          轴上的表达，未减去自车速度。按帧查看速度可自行控制，不代表系统实时运行速度。
+          轴上的表达，未减去自车速度。按帧查看速度可自行控制，不代表系统实时运行速度。视频和逐帧数据均保留 C++ 改动前的跟踪配置。
         </p>
       </section>
       <section class="section wrap" id="results">
@@ -269,7 +270,7 @@
             <p class="eyebrow">03 / 性能与质量</p>
             <h2>先定位耗时，再衡量取舍。</h2>
           </div>
-          <p>相同记录、检测器与跟踪器。<br />对照中只改变聚类体素大小。</p>
+          <p>相同记录、检测器与跟踪器。<br />本组为旧版跟踪器的体素聚类对照。</p>
         </div>
         <div class="results-layout">
           <div class="result-story">
@@ -394,10 +395,75 @@
             每场景 400 帧，每种设置运行一次；YOLOv8n 使用 RTX 5090，BLAS/OpenMP
             线程数为 1。计时不含前 5 帧预热、读盘、渲染与评估。MOTA 使用 BEV IoU
             0.3，IDF1 使用 0.5，HOTA 平均 19 个阈值。真值与跟踪结果使用相同 XY
-            范围及相机视野，包含被遮挡真值。优化后两个场景的平均耗时仍超过 100
-            ms，召回率仍偏低；这是项目内部评估。
+            范围及相机视野，包含被遮挡真值。本组体素优化后的平均耗时仍超过 100
+            ms。后续 C++ 跟踪结果见下方；召回率仍偏低，属于项目内部评估。
           </p>
         </div>
+      </section>
+      <section class="section wrap" id="native-tracking">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03B / C++ 跟踪加速</p>
+            <h2>批量计算 IoU，跟踪均值降到约 3 ms。</h2>
+          </div>
+          <p>固定检测输入，三轮交叉顺序对照。<br />仅替换计算后端时，800 帧轨迹状态一致。</p>
+        </div>
+        <div class="results-layout">
+          <div class="result-story">
+            <span class="number-label">Python + C++</span>
+            <h3>将耗时的旋转框交集<br />交给原生批量计算。</h3>
+            <p>缓存框顶点，先排除不相交的候选，再计算多边形交集。Python 保留滤波、关联与预测，评估器沿用原实现。</p>
+            <p>提前处理匹配阈值修复了边界情况下有效匹配被挤占的问题。这两段记录的 HOTA、IDF1 与 MOTA 没有提高；π 周期框朝向平滑也未稳定改善指标，保留为可选项。</p>
+            <a class="text-link" href="benchmarks/tracking/README.md">安装、协议与复现命令 ↗</a>
+          </div>
+          <div class="result-panel">
+            <div class="panel-heading"><h3>跟踪与流水线耗时</h3>
+            <div class="segmented compact" aria-label="C++ 对照场景">
+              <button type="button" class="selected" data-native-scene="urban" aria-pressed="true">城市</button>
+              <button type="button" data-native-scene="highway" aria-pressed="false">高速</button>
+            </div>
+            </div>
+            <p class="small" id="native-latency-scene">城市 · 仅 tracker.update 平均耗时 · 越低越好</p>
+            <div class="latency-row">
+              <div><span>Python 原逻辑</span><strong id="native-python-time">44.7 ms</strong></div>
+              <div class="bar-track"><span class="bar raw" style="width: 100%"></span></div>
+            </div>
+            <div class="latency-row">
+              <div><span>C++ 原逻辑</span><strong id="native-cpp-time">3.2 ms</strong></div>
+              <div class="bar-track"><span id="native-cpp-bar" class="bar" style="width: 7.2%"></span></div>
+            </div>
+            <p class="small" id="native-speedup">提速 13.9× · 仅跟踪计算，不含检测</p>
+            <div class="table-scroll">
+              <table>
+                <caption>完整流水线：同次环境各运行一次（平均 / p95，ms）</caption>
+                <thead><tr><th scope="col">配置</th><th scope="col">耗时</th></tr></thead>
+                <tbody id="native-pipeline"><tr><th scope="row">Python 原逻辑</th><td>130.2 / 171.8</td></tr><tr><th scope="row">C++ + 阈值处理</th><td>89.3 / 104.0</td></tr></tbody>
+              </table>
+            </div>
+            <div class="report-links">
+              <a id="native-ablation-report" href="benchmarks/tracking/urban_ablation.json">消融 JSON ↗</a>
+              <a id="native-pipeline-report" href="benchmarks/tracking/urban_cpp_threshold.json">流水线 JSON ↗</a>
+            </div>
+            <p class="small" id="native-status" role="status">数据来自本地 400 帧实测。</p>
+          </div>
+        </div>
+        <details class="protocol-note">
+          <summary>展开五种配置的精度消融</summary>
+          <div class="table-scroll">
+            <table>
+              <caption id="native-ablation-caption">城市 · 固定检测输入 · 400 帧</caption>
+              <thead><tr><th scope="col">配置</th><th scope="col">跟踪均值 ms</th><th scope="col">HOTA</th><th scope="col">IDF1</th><th scope="col">MOTA</th></tr></thead>
+              <tbody id="native-ablation">
+                <tr><th scope="row">Python 原逻辑</th><td>44.71</td><td>0.1840</td><td>0.1726</td><td>0.0445</td></tr>
+                <tr><th scope="row">C++ 原逻辑</th><td>3.22</td><td>0.1840</td><td>0.1726</td><td>0.0445</td></tr>
+                <tr><th scope="row">C++ + π 周期</th><td>3.18</td><td>0.1839</td><td>0.1715</td><td>0.0440</td></tr>
+                <tr><th scope="row">C++ + 阈值处理（默认）</th><td>3.19</td><td>0.1840</td><td>0.1726</td><td>0.0445</td></tr>
+                <tr><th scope="row">C++ + 两项改动</th><td>3.21</td><td>0.1839</td><td>0.1715</td><td>0.0440</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <p class="fine-print">跟踪计时排除前 5 帧，三轮轮换配置顺序；完整流水线另行实测，不含读盘、渲染和评估。仍使用 0.2 m 体素、YOLOv8n、IMM 与前视相机评估区域。C++ 原逻辑状态一致不代表新匹配策略状态完全相同；两段记录只用于开发对照，未证明新场景泛化。已有视频与逐帧查看数据保留旧跟踪配置。</p>
       </section>
       <section class="section wrap" id="forecasting">
         <div class="section-head">
@@ -706,9 +772,7 @@
           <details>
             <summary>为什么流水线提速后仍不称为实时系统？</summary>
             <p>
-              完整传感器处理平均耗时仍大于 100 ms；视频播放速度、合成 GT
-              检测器的低耗时和真实传感器流水线吞吐率不能相互替代。性能结果同时列出平均值、p95
-              和计时范围。
+              C++ 加速后的均值与尾部耗时见新对照，但计时不含读盘、渲染和评估，也未验证持续在线运行的截止时间。视频播放速度不能代表处理速度；性能结果同时列出平均值、p95 和计时范围。
             </p>
           </details>
         </div>

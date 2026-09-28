@@ -18,6 +18,36 @@
 `PerceptionOutput` 保存检测、轨迹和预测。算法核心依赖 NumPy/SciPy/scikit-learn，
 YOLO、VGGT、Pillow、Matplotlib、ROS 与 CARLA 客户端均按功能选用。
 
+## C++ 跟踪加速与关联配置
+
+Python 保留检测、滤波、关联求解与预测调度；C++14 扩展批量计算旋转框的 BEV IoU。
+每个框只生成一次顶点，先用轴对齐包围框排除不相交候选，再用
+Sutherland–Hodgman 多边形裁剪计算交集。计算采用双精度，并在局部坐标下求面积。
+评估器仍使用原实现，避免把评估计算变化混入质量对照。
+
+```bash
+# 正常安装会尝试编译，需要 C++14 编译器和 Python 开发头文件。
+pip install './src/perception_core[test]'
+python -c 'from perception_core.common.iou import resolve_iou_backend; print(resolve_iou_backend())'
+# 新检出目录中，可明确关闭编译：
+PERCEPTION_CORE_NO_NATIVE=1 pip install './src/perception_core[test]'
+```
+
+`TrackerConfig.iou_backend` 可选 `auto`、`python` 或 `cpp`。默认 `auto` 优先使用
+C++，不可用时退回 Python；显式指定 `cpp` 时，缺失扩展会报错。pybind11 由隔离构建
+环境安装，运行时不需要它。CARLA 回放使用对应的 `--iou-backend` 参数，JSON 保存实际后端。
+
+默认 `matching_policy="thresholded"` 在分配前把低于 IoU 阈值的边置为零权重，
+求解后丢弃这些边，最大化有效 IoU 总和，允许目标未匹配。它不保证优先最大匹配数量。
+`post_filter` 保留旧的“先分配再按阈值过滤”行为，可复现历史结果。
+
+框朝向默认保留 `box_yaw_period=2*pi`；可用 `--box-yaw-period pi` 处理 PCA 轴向
+正负号等价问题。π 周期平滑在交替翻转的单元场景有效，但未稳定改善当前实录评估，
+因此作为可选项。框的无向轴不等于车辆行进方向，运动预测仍使用速度估计。
+
+[本轮完整报告](benchmarks/tracking/README.md)包含固定检测消融、完整流水线计时、
+状态一致性和复现命令。网站已有视频及逐帧数据保留旧跟踪配置，不是新算法输出。
+
 ## 坐标、时间与身份
 
 点云位于右手 LiDAR 坐标系，x 向前、y 向左、z 向上。`ego_pose` 表示

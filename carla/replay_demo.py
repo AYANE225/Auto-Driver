@@ -32,7 +32,10 @@ from perception_core.tracking.mot import TrackerConfig
 
 def build_pipeline(args):
     cfg = PipelineConfig(lidar=LidarClusterConfig(voxel_size=args.voxel_size),
-                         tracker=TrackerConfig(motion_model=args.tracker, gating=args.gating))
+                         tracker=TrackerConfig(motion_model=args.tracker, gating=args.gating,
+                                               iou_backend=args.iou_backend,
+                                               matching_policy=args.matching_policy,
+                                               box_yaw_period=np.pi if args.box_yaw_period == "pi" else 2*np.pi))
     camera_detector = None
     detector = None
     if args.detector == "gt":
@@ -177,6 +180,7 @@ def run_replay(args):
         "dataset": args.dataset.name, "town": ds.meta.get("town"),
         "carla_version": ds.meta.get("carla_version"),
         "detector": args.detector, "tracker": args.tracker,
+        "iou_backend": pipe.tracker.iou_backend,
         "start_frame": args.start_frame, "dt": ds.dt,
         **mot.as_dict(), "hota": hota.as_dict(), "identity": identity.as_dict(),
         "evaluation": {"similarity": "BEV IoU", "class_agnostic": True,
@@ -225,6 +229,10 @@ def main():
     ap.add_argument("--detector", choices=["lidar", "fusion", "gt"], default="lidar")
     ap.add_argument("--tracker", choices=["cv", "imm"], default="imm")
     ap.add_argument("--gating", action="store_true", help="enable Mahalanobis association gating")
+    ap.add_argument("--iou-backend", choices=["auto", "python", "cpp"], default="auto")
+    ap.add_argument("--matching-policy", choices=["thresholded", "post_filter"], default="thresholded")
+    ap.add_argument("--box-yaw-period", choices=["pi", "2pi"], default="2pi",
+                    help="pi treats PCA box axes as unoriented; 2pi reproduces older smoothing")
     ap.add_argument("--weights", default="yolov8n.pt", help="YOLO checkpoint for fusion")
     ap.add_argument("--device", default="", help="YOLO device, e.g. cpu or cuda:0")
     ap.add_argument("--gate-iou", type=float, default=0.1)
