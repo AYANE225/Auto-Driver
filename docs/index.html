@@ -1,46 +1,51 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#0c131b" />
     <meta
       name="description"
-      content="Auto-Driver: camera and LiDAR perception, multi-object tracking and motion forecasting. Explore CARLA replays, measured performance and a reusable ROS 2 core."
+      content="Auto-Driver 自动驾驶感知项目：相机与激光雷达融合、多目标跟踪、轨迹预测、ROS 2 接入。在线逐帧查看实录点云、预测对照和可复现评估。"
     />
-    <meta
-      property="og:title"
-      content="Auto-Driver — From raw sensors to tracked motion"
-    />
+    <meta property="og:title" content="Auto-Driver · 从传感器数据到运动轨迹" />
     <meta
       property="og:description"
-      content="A working perception stack with CARLA replays, ROS 2 integration and reproducible evaluation."
+      content="中文交互展示：CARLA 实录回放、点云与跟踪结果、轨迹预测对照、实测性能。"
     />
     <meta
       property="og:image"
       content="https://ayane225.github.io/Auto-Driver/assets/overview.jpg"
     />
-    <title>Auto-Driver · Perception in motion</title>
+    <title>Auto-Driver · 自动驾驶感知与轨迹预测</title>
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2390e0b8'/%3E%3Cpath d='M14 48L32 14L50 48M22 34H42' fill='none' stroke='%230c131b' stroke-width='5'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="assets/site.css" />
     <script src="assets/site.js" defer></script>
+    <script src="assets/explorers.js" defer></script>
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    <a class="skip" href="#main">跳转到主要内容</a>
     <header class="site-header wrap">
-      <a class="brand" href="#" aria-label="Auto-Driver home"
+      <a class="brand" href="#" aria-label="Auto-Driver 首页"
         ><span class="brand-mark" aria-hidden="true">A</span> AUTO-DRIVER<span
           class="version"
         >
-          / 01</span
+          / 中文</span
         ></a
+      ><button
+        id="nav-toggle"
+        aria-expanded="false"
+        aria-controls="main-nav"
+        type="button"
       >
-      <nav aria-label="Main navigation">
-        <a href="#demo">Replay</a><a href="#results">Results</a
-        ><a href="#system">System</a
+        导航
+      </button>
+      <nav id="main-nav" aria-label="主要导航">
+        <a href="#explorer">逐帧查看</a><a href="#results">实测结果</a
+        ><a href="#forecasting">轨迹预测</a><a href="#run">本地运行</a
         ><a class="github" href="https://github.com/AYANE225/Auto-Driver"
           >GitHub ↗</a
         >
@@ -49,69 +54,72 @@
     <main id="main">
       <section class="hero wrap">
         <p class="eyebrow">
-          <span class="status-dot"></span> AUTONOMOUS-DRIVING PERCEPTION
+          <span class="status-dot"></span> 相机 × 激光雷达 · 自动驾驶感知
         </p>
         <div class="hero-heading">
-          <h1>From raw sensors <br />to <em>tracked motion.</em></h1>
-          <p class="hero-note">
-            A working camera + LiDAR stack. <br />Detection, fusion, tracking
-            and forecasting — from recorded roads to ROS 2.
-          </p>
+          <div>
+            <h1>从传感器数据<br />到<em>可追踪的运动。</em></h1>
+            <p class="hero-note">
+              检测、融合、跟踪与预测，连接到同一套 Python
+              核心。用实录场景展示系统，用可复现的评估说明效果。
+            </p>
+          </div>
+          <a class="hero-preview" href="#explorer"
+            ><img
+              src="assets/urban_poster.jpg"
+              alt="CARLA 城市场景中的相机画面与鸟瞰跟踪结果"
+              width="1186"
+              height="448"
+            /><span>查看点云、目标与预测轨迹 <b>↗</b></span></a
+          >
         </div>
         <div class="hero-actions">
-          <a class="button primary" href="#demo"
-            >Explore the replay <span>↘</span></a
-          ><a
-            class="text-link"
-            href="https://github.com/AYANE225/Auto-Driver#quickstart"
-            >Run it locally ↗</a
+          <a class="button primary" href="#explorer"
+            >打开逐帧查看器 <span>↘</span></a
+          ><a class="text-link" href="#demo">播放系统演示 ↓</a
           ><span class="hero-stack">Python · CARLA · ROS 2 Humble</span>
         </div>
         <div class="stats">
           <div>
             <strong>6.86<span>×</span></strong>
-            <p>Faster urban replay pipeline</p>
-            <small>0.2 m voxel clustering · mean latency</small>
+            <p>城市回放流水线提速</p>
+            <small>0.2 m 体素聚类 · 平均耗时对照</small>
           </div>
           <div>
             <strong>800</strong>
-            <p>Sensor frames evaluated</p>
-            <small>Urban + highway · 400 frames each</small>
+            <p>实录传感器帧完成评估</p>
+            <small>城市、高速各 400 帧</small>
           </div>
           <div>
-            <strong>6<span> towns</span></strong>
-            <p>Recorded trajectory evaluation</p>
-            <small>Separate training, validation and test towns</small>
+            <strong>6<span> 个城镇</span></strong>
+            <p>建立轨迹预测评估</p>
+            <small>训练、验证、测试按城镇划分</small>
           </div>
         </div>
       </section>
-
       <section class="section wrap" id="demo">
         <div class="section-head">
           <div>
-            <p class="eyebrow">01 / SENSOR REPLAY</p>
-            <h2>One scene. Two perspectives.</h2>
+            <p class="eyebrow">01 / 系统回放</p>
+            <h2>同一段行程，两种视角。</h2>
           </div>
-          <p>
-            Matching colors connect track identities <br />across the camera and
-            bird’s-eye view.
-          </p>
+          <p>相同颜色表示同一跟踪 ID。<br />在相机画面和鸟瞰图之间对照目标。</p>
         </div>
         <div class="replay-shell">
           <div class="replay-toolbar">
-            <div class="segmented" aria-label="Choose replay scene">
+            <div class="segmented" aria-label="视频场景">
               <button
                 type="button"
                 class="selected"
                 data-scene="urban"
                 aria-pressed="true"
               >
-                Urban <span>Town10HD</span></button
+                城市 <span>Town10HD</span></button
               ><button type="button" data-scene="highway" aria-pressed="false">
-                Highway <span>Town04</span>
+                高速 <span>Town04</span>
               </button>
             </div>
-            <span class="replay-tag">RECORDED IN CARLA 0.9.16</span>
+            <span class="replay-tag">CARLA 0.9.16 · 录制数据离线回放</span>
           </div>
           <video
             id="replay"
@@ -121,90 +129,197 @@
             loop
             preload="none"
             poster="assets/urban_poster.jpg"
-            aria-label="Urban CARLA replay: camera view and bird's-eye tracking view"
+            aria-label="城市 CARLA 相机与鸟瞰跟踪回放"
           >
             <source src="assets/urban.mp4" type="video/mp4" />
-            Your browser cannot play this video.
-            <a href="assets/urban.mp4">Download the urban replay.</a>
+            浏览器不支持此视频。<a href="assets/urban.mp4">下载城市回放</a>
           </video>
           <div class="replay-caption">
-            <span id="scene-caption">Urban / Town10HD_Opt</span
+            <span id="scene-caption">城市 / Town10HD_Opt</span
             ><span
-              >24 s preview · camera + BEV ·
+              >24 秒预览 · 相机 + BEV ·
               <a
                 id="gif-link"
                 href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/demo_carla_urban.gif"
-                >Original GIF ↗</a
+                >原始 GIF ↗</a
               ></span
             >
           </div>
         </div>
         <p class="fine-print">
-          The preview shows the original clustering run: 120 rendered frames at
-          5 fps. Each evaluation processes all 400 sensor frames at their
-          recorded timestamps. Playback speed does not represent processing
-          throughput.
+          视频沿用原始点云聚类运行：120 个渲染帧、5 fps。每次评估均处理完整 400
+          帧传感器数据。视频播放速度不代表流水线吞吐率。
         </p>
       </section>
-
+      <section class="section wrap" id="explorer">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">02 / 逐帧查看</p>
+            <h2>把结果停下来，看清每个目标。</h2>
+          </div>
+          <p>拖动时间轴、切换图层，<br />点击跟踪框或选择 ID 查看状态。</p>
+        </div>
+        <div class="viewer-panel">
+          <div class="panel-heading">
+            <label
+              >场景
+              <select id="viewer-scene">
+                <option value="urban">城市 · Town10HD</option>
+                <option value="highway">高速 · Town04</option>
+              </select></label
+            ><span class="small">0.2 m 体素聚类 + YOLO 相机确认 + IMM</span>
+          </div>
+          <div class="viewer-grid">
+            <div class="canvas-wrap">
+              <canvas
+                id="bev-canvas"
+                width="700"
+                height="560"
+                aria-label="实录点云、真值框和跟踪预测鸟瞰图"
+                aria-describedby="viewer-summary"
+                >请使用支持 Canvas 的浏览器；当前帧 JSON
+                可通过下方链接下载。</canvas
+              >
+              <div class="canvas-tools">
+                <button type="button" id="reset-view">复位视图</button
+                ><button type="button" id="save-bev" disabled>保存 PNG</button>
+              </div>
+            </div>
+            <aside class="frame-details">
+              <img
+                id="frame-camera"
+                hidden
+                alt="当前帧前视相机图像"
+                loading="lazy"
+              />
+              <p class="small">当前时刻的原始前视图像（无叠加标注）</p>
+              <p id="viewer-summary" role="status">正在读取实录数据…</p>
+              <label for="track-select">查看跟踪目标</label
+              ><select id="track-select">
+                <option value="">请选择目标</option>
+              </select>
+              <dl id="track-details">
+                <dt>操作提示</dt>
+                <dd>点击彩色跟踪框，或在上方选择跟踪 ID。</dd>
+              </dl>
+              <a
+                id="frame-json"
+                hidden
+                class="text-link"
+                href="assets/replay/urban/index.json"
+                download
+                >下载当前帧 JSON ↓</a
+              >
+            </aside>
+          </div>
+          <div class="frame-timeline">
+            <button type="button" id="previous-frame" aria-label="上一采样帧">
+              ←</button
+            ><button type="button" id="play-frames">连续查看</button
+            ><input
+              type="range"
+              id="frame-slider"
+              min="0"
+              max="0"
+              value="0"
+              aria-label="选择采样帧"
+            /><button type="button" id="next-frame" aria-label="下一采样帧">
+              →</button
+            ><output id="frame-label" for="frame-slider">—</output>
+          </div>
+          <div class="layer-controls" aria-label="显示图层">
+            <label
+              ><input type="checkbox" data-layer="points" checked /> 点云</label
+            ><label
+              ><input type="checkbox" data-layer="ground_truth" checked />
+              真值框（黄色虚线）</label
+            ><label
+              ><input type="checkbox" data-layer="tracks" checked />
+              跟踪框（彩色）</label
+            ><label
+              ><input type="checkbox" data-layer="history" checked />
+              历史轨迹</label
+            ><label
+              ><input type="checkbox" data-layer="predictions" checked />
+              预测轨迹</label
+            ><label class="zoom-control"
+              >缩放
+              <input
+                id="bev-zoom"
+                type="range"
+                min="1"
+                max="4"
+                step="0.1"
+                value="1"
+            /></label>
+          </div>
+        </div>
+        <p class="fine-print">
+          两场景均连续处理 400 帧，每 20 帧及最后一帧导出一次，共 42
+          个可查看时刻。每帧最多抽样 2,500
+          个点供显示，检测仍使用原始输入。目标框与轨迹按评估区域和前视相机视野筛选。坐标为当前
+          LiDAR 坐标系：x 向前、y 向左、z 向上，单位
+          m。速度为世界系估计速度在当前 LiDAR
+          轴上的表达，未减去自车速度。按帧查看速度可自行控制，不代表系统实时运行速度。
+        </p>
+      </section>
       <section class="section wrap" id="results">
         <div class="section-head">
           <div>
-            <p class="eyebrow">02 / MEASURED PERFORMANCE</p>
-            <h2>Profile. Improve. Measure again.</h2>
+            <p class="eyebrow">03 / 性能与质量</p>
+            <h2>先定位耗时，再衡量取舍。</h2>
           </div>
-          <p>
-            Same recordings, detector and tracker. <br />Change one clustering
-            parameter.
-          </p>
+          <p>相同记录、检测器与跟踪器。<br />对照中只改变聚类体素大小。</p>
         </div>
         <div class="results-layout">
           <div class="result-story">
             <span class="number-label">0.2 m</span>
-            <h3>
-              Cluster voxel centroids. <br />Fit boxes to original points.
-            </h3>
+            <h3>在体素质心上聚类，<br />用原始点拟合包围框。</h3>
             <p>
-              Weighted DBSCAN uses the number of points in each voxel to
-              preserve the density threshold. Bounding boxes still use the
-              original points. Voxelization can change neighborhood geometry, so
-              quality is measured alongside speed.
+              按体素内点数为 DBSCAN
+              加权，保留点数密度阈值；包围框仍由原始点拟合。体素化会近似邻域几何，因此速度和跟踪质量同时报告。
             </p>
             <a
               class="text-link"
               href="https://github.com/AYANE225/Auto-Driver/blob/main/src/perception_core/perception_core/detection/lidar_cluster.py"
-              >Inspect the implementation ↗</a
+              >查看聚类实现 ↗</a
             >
+            <details class="metric-help">
+              <summary>这些指标分别说明什么？</summary>
+              <p>
+                <b>Precision / Recall：</b>输出中匹配正确的比例 /
+                真值被覆盖的比例。<b>HOTA：</b>综合检测与身份关联的质量。<b>IDF1：</b>全序列身份匹配
+                F1。<b>MOTA：</b>由漏检、误检、身份切换计算，可能为负。<b>p95：</b>95%
+                被计时帧的耗时不超过该值。
+              </p>
+            </details>
           </div>
           <div class="result-panel">
             <div class="panel-heading">
-              <h3>Pipeline latency</h3>
-              <div
-                class="segmented compact"
-                aria-label="Choose benchmark scene"
-              >
+              <h3>流水线耗时</h3>
+              <div class="segmented compact" aria-label="评估场景">
                 <button
                   type="button"
                   data-benchmark="urban"
                   class="selected"
                   aria-pressed="true"
                 >
-                  Urban</button
+                  城市</button
                 ><button
                   type="button"
                   data-benchmark="highway"
                   aria-pressed="false"
                 >
-                  Highway
+                  高速
                 </button>
               </div>
             </div>
             <p class="small" id="latency-scene">
-              Urban · mean milliseconds per frame · lower is better
+              城市 · 每帧平均耗时（ms）· 越低越好
             </p>
             <div class="latency-row">
               <div>
-                <span>Raw points</span
+                <span>原始点聚类</span
                 ><strong id="raw-latency">888.5 ms</strong>
               </div>
               <div class="bar-track">
@@ -213,7 +328,7 @@
             </div>
             <div class="latency-row">
               <div>
-                <span>0.2 m voxels</span
+                <span>0.2 m 体素聚类</span
                 ><strong id="voxel-latency">129.5 ms</strong>
               </div>
               <div class="bar-track">
@@ -221,18 +336,18 @@
               </div>
             </div>
             <p class="small" id="latency-detail">
-              6.86× speedup · p95: 1575.8 → 171.2 ms
+              提速 6.86× · p95：1575.8 → 171.2 ms
             </p>
             <div class="table-scroll">
               <table>
                 <caption>
-                  Tracking quality for the same runs
+                  相同运行的跟踪质量
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Metric</th>
-                    <th scope="col">Raw points</th>
-                    <th scope="col">0.2 m voxels</th>
+                    <th scope="col">指标</th>
+                    <th scope="col">原始点</th>
+                    <th scope="col">0.2 m 体素</th>
                   </tr>
                 </thead>
                 <tbody id="tracking-metrics">
@@ -266,108 +381,106 @@
             </div>
             <div class="report-links">
               <a id="raw-report" href="benchmarks/urban_voxel_0.json"
-                >Raw-point report ↗</a
+                >原始点报告 ↗</a
               ><a id="voxel-report" href="benchmarks/urban_voxel_0.2.json"
-                >Voxel report ↗</a
-              >
+                >体素报告 ↗</a
+              ><button type="button" id="download-metrics">导出 CSV ↓</button>
             </div>
           </div>
         </div>
         <div class="protocol-note">
-          <strong>What the numbers cover</strong>
+          <strong>评估条件与当前限制</strong>
           <p>
-            400 frames per scene; one run per setting. Fusion + IMM, YOLOv8n on
-            RTX 5090; BLAS/OpenMP threads set to 1. Latency excludes five warmup
-            frames, I/O, rendering and evaluation. BEV IoU: MOTA at 0.3, IDF1 at
-            0.5, HOTA over 19 thresholds. Identical XY region and camera FOV for
-            GT and tracks; occluded GT remains included. Both scenes still
-            exceed the 100 ms sensor interval on average, and recall remains
-            low. These are project evaluations.
+            每场景 400 帧，每种设置运行一次；YOLOv8n 使用 RTX 5090，BLAS/OpenMP
+            线程数为 1。计时不含前 5 帧预热、读盘、渲染与评估。MOTA 使用 BEV IoU
+            0.3，IDF1 使用 0.5，HOTA 平均 19 个阈值。真值与跟踪结果使用相同 XY
+            范围及相机视野，包含被遮挡真值。优化后两个场景的平均耗时仍超过 100
+            ms，召回率仍偏低；这是项目内部评估。
           </p>
         </div>
       </section>
-
       <section class="section wrap" id="forecasting">
         <div class="section-head">
           <div>
-            <p class="eyebrow">03 / TRAJECTORY FORECASTING</p>
-            <h2>Test on towns the model hasn’t seen.</h2>
+            <p class="eyebrow">04 / 轨迹预测</p>
+            <h2>在未参与训练的城镇上检验预测。</h2>
           </div>
-          <p>
-            Two seconds of observed positions. <br />Six future points through
-            three seconds.
-          </p>
+          <p>输入 2 秒历史位置，<br />预测未来 3 秒的 6 个位置。</p>
         </div>
         <div class="split-strip">
           <div>
-            <span>TRAIN</span><strong>Town01 · 02 · 03</strong
-            ><small>131,858 windows</small>
+            <span>训练</span><strong>Town01 · 02 · 03</strong
+            ><small>131,858 个窗口</small>
           </div>
           <div>
-            <span>VALIDATE</span><strong>Town04</strong
-            ><small>40,415 windows</small>
+            <span>验证</span><strong>Town04</strong><small>40,415 个窗口</small>
           </div>
           <div>
-            <span>TEST</span><strong>Town05 · 10HD</strong
-            ><small>92,751 windows</small>
+            <span>测试</span><strong>Town05 · 10HD</strong
+            ><small>92,751 个窗口</small>
           </div>
         </div>
         <div class="forecast-panel">
           <div class="panel-heading">
             <div>
-              <h3>Held-out test results</h3>
+              <h3>测试集预测误差</h3>
               <p class="small" id="forecast-count">
-                92,751 windows · lower is better for every metric
+                92,751 个窗口 · 三项指标均越低越好
               </p>
             </div>
-            <div
-              class="segmented compact"
-              aria-label="Choose forecast population"
-            >
-              <button
-                type="button"
-                class="selected"
-                data-population="all"
-                aria-pressed="true"
-              >
-                All actors</button
-              ><button
-                type="button"
-                data-population="moving"
-                aria-pressed="false"
-              >
-                Moving actors
-              </button>
+            <div class="forecast-filters">
+              <label for="forecast-town">测试范围</label
+              ><select id="forecast-town">
+                <option value="test_pooled">两个测试城镇汇总</option>
+                <option value="Town05_Opt">Town05</option>
+                <option value="Town10HD_Opt">Town10HD</option>
+              </select>
+              <div class="segmented compact" aria-label="预测评估对象">
+                <button
+                  type="button"
+                  class="selected"
+                  data-population="all"
+                  aria-pressed="true"
+                >
+                  全部对象</button
+                ><button
+                  type="button"
+                  data-population="moving"
+                  aria-pressed="false"
+                >
+                  移动对象
+                </button>
+              </div>
             </div>
           </div>
           <div class="table-scroll">
             <table class="forecast-table">
               <caption class="sr-only">
-                Forecasting errors on Town05 and Town10HD
+                测试城镇的 ADE、FDE 与未命中率
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Model</th>
+                  <th scope="col">模型</th>
                   <th scope="col">ADE ↓ <span>m</span></th>
                   <th scope="col">FDE ↓ <span>m</span></th>
-                  <th scope="col">Miss rate ↓ <span>&gt; 2 m</span></th>
+                  <th scope="col">未命中率 ↓ <span>FDE &gt; 2 m</span></th>
                 </tr>
               </thead>
               <tbody id="forecast-metrics">
                 <tr>
-                  <th scope="row">Constant velocity</th>
+                  <th scope="row">恒速度 CV</th>
                   <td>0.126</td>
                   <td>0.258</td>
                   <td>3.00%</td>
                 </tr>
                 <tr>
-                  <th scope="row">Constant acceleration</th>
+                  <th scope="row">恒加速度 CA</th>
                   <td>0.227</td>
                   <td>0.505</td>
                   <td>5.83%</td>
                 </tr>
                 <tr>
-                  <th scope="row">Ridge residual</th>
+                  <th scope="row">Ridge 残差回归</th>
                   <td>0.167</td>
                   <td>0.350</td>
                   <td>2.82%</td>
@@ -376,172 +489,314 @@
             </table>
           </div>
           <div class="forecast-takeaway">
-            <strong>The simple baseline remains competitive.</strong>
+            <strong>简单基线依然有竞争力。</strong>
             <p>
-              Ridge reduces the test miss rate, but has higher ADE and FDE than
-              constant velocity. It is an experimental baseline; the runtime
-              pipeline continues to use CV/CTRV forecasts.
+              在两个测试城镇的汇总结果中，Ridge 降低了未命中率，但 ADE 和 FDE
+              高于恒速度模型。它保留为离线对照，在线流水线继续使用 CV/CTRV。
             </p>
           </div>
           <a class="text-link" href="benchmarks/forecasting/metrics.json"
-            >Full results, split definitions and file hashes ↗</a
+            >完整结果、划分规则与文件哈希 ↗</a
           >
         </div>
         <p class="fine-print">
-          Input: ground-truth actor positions, independent of sensor detection
-          and tracking. Moving actors travel at least 0.5 m over the preceding
-          second. Hyperparameters are selected on validation ADE only. Windows
-          overlap, so these window-weighted results are correlated observations.
+          输入为真值位置历史，不含感知与跟踪误差。“移动对象”指过去 1 秒位移至少
+          0.5 m。超参数只用验证集 ADE
+          选择。重叠窗口存在相关性，汇总结果按窗口数加权。
         </p>
+        <div class="example-panel" id="forecast-examples">
+          <div class="panel-heading">
+            <div>
+              <h3>把单条预测与实际未来放在一起</h3>
+              <p class="small">
+                每个测试城镇从移动窗口中等间隔抽取 12 个示例，不以误差筛选。
+              </p>
+            </div>
+            <label for="forecast-example"
+              >示例
+              <select id="forecast-example">
+                <option>正在读取…</option>
+              </select></label
+            >
+          </div>
+          <div class="forecast-view">
+            <div class="canvas-wrap">
+              <canvas
+                id="forecast-canvas"
+                width="780"
+                height="480"
+                aria-label="历史轨迹、实际未来与三种预测的 XY 对照"
+                >可通过下方链接下载示例数据。</canvas
+              >
+              <div class="canvas-tools">
+                <button type="button" id="save-forecast" disabled>
+                  保存 PNG
+                </button>
+              </div>
+            </div>
+            <div>
+              <div class="forecast-legend">
+                <label
+                  ><input
+                    type="checkbox"
+                    data-forecast-line="history"
+                    checked
+                  /><i style="--color: #91a6b8"></i>历史位置</label
+                ><label
+                  ><input
+                    type="checkbox"
+                    data-forecast-line="future"
+                    checked
+                  /><i style="--color: #edf4f8"></i>实际未来</label
+                ><label
+                  ><input type="checkbox" data-forecast-line="cv" checked /><i
+                    style="--color: #90e0b8"
+                  ></i
+                  >恒速度 CV</label
+                ><label
+                  ><input type="checkbox" data-forecast-line="ca" checked /><i
+                    style="--color: #79b5f2"
+                  ></i
+                  >恒加速度 CA</label
+                ><label
+                  ><input
+                    type="checkbox"
+                    data-forecast-line="ridge"
+                    checked
+                  /><i style="--color: #e2bb80"></i>Ridge 回归</label
+                >
+              </div>
+              <p class="small" id="example-description" role="status"></p>
+              <div class="table-scroll">
+                <table>
+                  <caption>
+                    当前示例误差（m）
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th>模型</th>
+                      <th>ADE</th>
+                      <th>FDE</th>
+                    </tr>
+                  </thead>
+                  <tbody id="example-errors"></tbody>
+                </table>
+              </div>
+              <a class="text-link" href="assets/forecast_examples.json" download
+                >下载全部示例 JSON ↓</a
+              >
+            </div>
+          </div>
+          <p class="fine-print">
+            以最后观测位置为原点，保持世界坐标 XY
+            轴方向，横纵轴同尺度。示例说明单个窗口的行为，不能替代上方全测试集统计。
+          </p>
+        </div>
       </section>
-
       <section class="section wrap" id="system">
         <div class="section-head">
           <div>
-            <p class="eyebrow">04 / SYSTEM DESIGN</p>
-            <h2>One core. Multiple ways to run it.</h2>
+            <p class="eyebrow">05 / 工程实现</p>
+            <h2>同一个核心，连接多种运行方式。</h2>
           </div>
           <p>
-            Algorithms live in a Python library. <br />ROS 2 and dataset readers
-            adapt the inputs.
+            算法放在独立 Python 库中。<br />数据读取器与 ROS 2 节点负责接入。
           </p>
         </div>
         <ol class="pipeline">
           <li>
             <span>01</span>
-            <h3>Detect</h3>
-            <p>RANSAC ground removal <br />DBSCAN + PCA boxes</p>
+            <h3>检测</h3>
+            <p>RANSAC 地面移除<br />DBSCAN 聚类 + PCA 框</p>
           </li>
           <li>
             <span>02</span>
-            <h3>Fuse</h3>
-            <p>Project LiDAR boxes <br />Confirm with YOLO detections</p>
+            <h3>融合</h3>
+            <p>LiDAR 框投影到图像<br />YOLO 确认与类别传递</p>
           </li>
           <li>
             <span>03</span>
-            <h3>Track</h3>
-            <p>CV / IMM + Hungarian <br />Stable world coordinates</p>
+            <h3>跟踪</h3>
+            <p>CV / IMM + Hungarian<br />统一世界坐标系</p>
           </li>
           <li>
             <span>04</span>
-            <h3>Forecast</h3>
-            <p>CV / CTRV motion models <br />3 s trajectory horizon</p>
+            <h3>预测</h3>
+            <p>CV / CTRV 运动模型<br />未来 3 秒轨迹</p>
           </li>
         </ol>
         <div class="engineering-grid">
           <article>
-            <span class="card-index">A / INTEGRATION</span>
-            <h3>Timestamped ROS 2 replay</h3>
+            <span class="card-index">A / 运行接入</span>
+            <h3>保留传感器时间戳的 ROS 2 回放</h3>
             <p>
-              Recorded LiDAR and sensor-time TF feed the same core. Tracks,
-              predictions and RViz markers publish in the map frame.
+              录制点云与对应时刻 TF 进入同一个核心，向 map
+              坐标系发布跟踪、预测消息与 RViz 标记。
             </p>
             <a
               href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/validation_2026-09-29.md"
-              >Replay validation ↗</a
+              >查看接入验证 ↗</a
             >
           </article>
           <article>
-            <span class="card-index">B / VERIFICATION</span>
-            <h3>Tests and reference checks</h3>
+            <span class="card-index">B / 验证与测试</span>
+            <h3>单元测试与参考工具核对</h3>
             <p>
-              CPU tests, Python 3.9–3.11 CI, geometry checks and a synthetic
-              latency gate. HOTA and IDF1 were compared with TrackEval.
+              CPU 单元测试、Python 3.9–3.11 CI 和合成场景耗时检查。HOTA 与 IDF1
+              已与 TrackEval 对照。
             </p>
             <a
               href="https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml"
-              >Continuous integration ↗</a
+              >查看持续集成 ↗</a
             >
           </article>
           <article>
-            <span class="card-index">C / EXTENSIBILITY</span>
-            <h3>Swappable detector backends</h3>
+            <span class="card-index">C / 模块扩展</span>
+            <h3>可替换的检测器后端</h3>
             <p>
-              LiDAR clustering, YOLO fusion, GT replay and an optional public
-              VGGT camera front-end share the same downstream pipeline.
+              LiDAR 聚类、YOLO 确认、真值回放与公开 VGGT
+              相机前端，共用下游跟踪和预测接口。
             </p>
             <a
-              href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/engineering.md"
-              >Engineering guide ↗</a
+              href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/engineering_zh.md"
+              >中文工程说明 ↗</a
             >
           </article>
         </div>
         <div class="additional">
           <div>
-            <p class="eyebrow">BEYOND CARLA</p>
-            <h3>KITTI raw & camera-only exploration</h3>
+            <p class="eyebrow">更多实验</p>
+            <h3>KITTI 实车记录与纯相机探索</h3>
             <p>
-              On KITTI drive 0014, camera confirmation reduced false positives
-              from 5,198 to 469, with recall falling from 0.251 to 0.225. The
-              VGGT demo explores camera-derived geometry; its monocular scale
-              limits it to a qualitative demonstration.
+              KITTI drive 0014 中，相机确认将误报从 5,198 降至 469，召回率由
+              0.251 降至 0.225。VGGT
+              前端把图像转换为伪点云；当前单目尺度和跨帧一致性尚未解决，用于定性展示。
             </p>
           </div>
           <div class="additional-links">
             <a
               href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/demo_kitti.gif"
-              >KITTI replay ↗</a
+              >KITTI 回放 ↗</a
             ><a
               href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/metrics_kitti_fusion.json"
-              >KITTI fusion report ↗</a
+              >KITTI 融合报告 ↗</a
             ><a
               href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/demo_vggt.gif"
-              >VGGT demo ↗</a
+              >VGGT 演示 ↗</a
             >
           </div>
         </div>
-      </section>
-
-      <section class="section wrap get-started" id="run">
-        <div>
-          <p class="eyebrow">05 / REPRODUCE</p>
-          <h2>Start with a local run.</h2>
-          <p>
-            The synthetic demo needs no CARLA server, ROS installation or GPU.
-            Sensor replay uses separately recorded datasets.
-          </p>
-          <a
-            class="text-link"
-            href="https://github.com/AYANE225/Auto-Driver#quickstart"
-            >Setup, recordings and Docker ↗</a
-          >
+        <div class="faq">
+          <h3>了解项目边界</h3>
+          <details>
+            <summary>浏览器里的点云和轨迹是真实运行结果吗？</summary>
+            <p>
+              它们来自 CARLA
+              模拟器保存的传感器记录，经过本项目实际检测、跟踪和预测后导出。浏览器只绘制导出数据，不在线运行感知模型。CARLA
+              记录与真实道路数据应区分；KITTI 是另一个真实数据实验。
+            </p>
+          </details>
+          <details>
+            <summary>是否实现了自动驾驶规划与控制？</summary>
+            <p>
+              当前范围是感知、跟踪与轨迹预测，没有路径规划或车辆控制模块。纯相机
+              VGGT 前端使用公开预训练模型，也没有经过完整的米制检测精度验证。
+            </p>
+          </details>
+          <details>
+            <summary>为什么流水线提速后仍不称为实时系统？</summary>
+            <p>
+              完整传感器处理平均耗时仍大于 100 ms；视频播放速度、合成 GT
+              检测器的低耗时和真实传感器流水线吞吐率不能相互替代。性能结果同时列出平均值、p95
+              和计时范围。
+            </p>
+          </details>
         </div>
-        <div class="command">
-          <div class="command-title">
-            <span>TERMINAL / CPU DEMO</span
-            ><button type="button" id="copy-command">Copy</button>
+      </section>
+      <section class="section wrap" id="run">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">06 / 上手运行</p>
+            <h2>选好配置，复制运行命令。</h2>
           </div>
-          <pre><code id="quickstart-command">git clone https://github.com/AYANE225/Auto-Driver.git
-cd Auto-Driver
-pip install ./src/perception_core
-python tools/run_demo.py --frames 60 --detector lidar \
-  --no-video --report metrics.json</code></pre>
-          <p class="small" id="copy-status" role="status"></p>
+          <p>先从无需 GPU 的合成场景开始，<br />再切换到自己的 CARLA 记录。</p>
+        </div>
+        <div class="command-builder">
+          <form id="command-options">
+            <label
+              >数据来源<select id="command-scene">
+                <option value="synthetic">合成场景（无外部数据）</option>
+                <option value="urban">CARLA 城市记录</option>
+                <option value="highway">CARLA 高速记录</option>
+              </select></label
+            ><label
+              >检测方式<select id="command-detector">
+                <option value="lidar">LiDAR 聚类</option>
+                <option value="gt">真值加噪声回放</option>
+                <option value="fusion">LiDAR + YOLO 确认</option>
+              </select></label
+            ><label
+              >跟踪模型<select id="command-tracker">
+                <option value="imm">IMM（CV + 恒转弯）</option>
+                <option value="cv">恒速度 Kalman</option>
+              </select></label
+            ><label
+              >运行设备<select id="command-device">
+                <option value="cpu">CPU</option>
+                <option value="cuda:0">CUDA GPU</option>
+              </select></label
+            ><label
+              >体素大小<select id="command-voxel">
+                <option value="0.2">0.2 m</option>
+                <option value="0">关闭（原始点）</option>
+              </select></label
+            ><label class="export-option"
+              ><input id="command-export" type="checkbox" />
+              导出逐帧网页数据</label
+            >
+          </form>
+          <div class="command">
+            <div class="command-title">
+              <span>项目根目录 / 可复制命令</span
+              ><button type="button" id="copy-command">复制</button>
+            </div>
+            <pre><code id="quickstart-command">pip install ./src/perception_core
+python tools/run_demo.py --frames 60 --detector lidar --tracker imm \
+  --no-video --report outputs/demo.json</code></pre>
+            <p class="small" id="copy-status" role="status"></p>
+          </div>
+        </div>
+        <p id="command-note" class="fine-print">
+          先克隆仓库并进入 Auto-Driver 目录。合成场景不需要 ROS、CARLA 或 GPU。
+        </p>
+        <div class="report-links">
+          <a href="https://github.com/AYANE225/Auto-Driver#快速开始"
+            >安装与快速开始 ↗</a
+          ><a
+            href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/engineering_zh.md"
+            >ROS 2、Docker 与导出说明 ↗</a
+          >
         </div>
       </section>
       <p class="wrap fine-print" id="data-status" role="status"></p>
       <noscript
         ><p class="wrap protocol-note">
-          JavaScript is disabled. The urban replay and summary tables remain
-          available; download the
-          <a href="assets/highway.mp4">highway video</a> or open the
-          <a href="benchmarks/forecasting/metrics.json"
-            >full forecasting report</a
-          >
-          for the other results.
+          JavaScript 已关闭。城市视频和静态评估表仍可查看；<a
+            href="assets/highway.mp4"
+            >下载高速视频</a
+          >，或<a href="benchmarks/forecasting/metrics.json">读取完整预测报告</a
+          >。逐帧查看器和配置生成器需要 JavaScript。
         </p></noscript
       >
     </main>
     <footer class="wrap">
       <a class="brand" href="#">AUTO-DRIVER</a>
       <p>
-        Perception · Tracking · Prediction <br /><span
-          >Engineering portfolio / MIT licensed code</span
+        感知 · 多目标跟踪 · 轨迹预测<br /><span
+          >工程项目展示 / 代码采用 MIT 许可</span
         >
       </p>
-      <a href="https://github.com/AYANE225/Auto-Driver"
-        >Explore the source ↗</a
-      >
+      <a href="https://github.com/AYANE225/Auto-Driver">查看源码 ↗</a>
     </footer>
   </body>
 </html>

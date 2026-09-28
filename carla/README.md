@@ -73,6 +73,15 @@ See the [comparison protocol](../docs/benchmarks/README.md) for speed and qualit
 on both recordings, and the [project page](https://ayane225.github.io/Auto-Driver/)
 for playable previews.
 
+To export sampled point clouds, tracks, forecasts and matching camera images for
+the browser viewer, add `--export-replay outputs/urban_viewer --export-every 20`
+to a replay command. Use a new output directory; an existing `index.json` is
+protected from overwrite. `--export-points` defaults to 2500 display points per
+sample. Every input frame still updates tracking and metrics, and the final
+frame is always exported. This option needs recorded camera images and Pillow.
+See the [Chinese export guide](../docs/engineering_zh.md) for file structure,
+coordinate conventions and browser usage.
+
 ## ROS 2 replay
 
 After building and sourcing the workspace in a ROS 2 environment:

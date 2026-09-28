@@ -6,7 +6,7 @@ CORE := src/perception_core
 
 .DEFAULT_GOAL := help
 .PHONY: help install install-dev test cov lint typecheck \
-        demo demo-imm carla-demo kitti bench predict forecast figures showcase site \
+        demo demo-imm carla-demo kitti bench predict forecast figures showcase site site-test \
         docker-core docker-ros clean
 
 help:  ## Show this help
@@ -67,6 +67,9 @@ showcase:  ## Regenerate project-page figures and videos (requires ffmpeg)
 
 site:  ## Serve the project page at http://localhost:8000
 	$(PY) -m http.server 8000 --directory docs
+
+site-test:  ## Check the running website (requires Playwright in NODE_PATH)
+	node tools/test_website.cjs http://127.0.0.1:8000/
 
 docker-core:  ## Build the framework-agnostic core image
 	docker build -t auto-driver-core .

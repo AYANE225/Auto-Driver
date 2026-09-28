@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 
 from perception_core.detection.mock import GroundTruthDetector
 from perception_core.eval import evaluate_tracking, evaluate_hota, evaluate_identity
@@ -76,6 +77,7 @@ def main() -> None:
         print(f"wrote {len(images)} frames -> {gif_path}")
 
     if args.report:
+        Path(args.report).parent.mkdir(parents=True, exist_ok=True)
         with open(args.report, "w") as fh:
             json.dump(report, fh, indent=2)
         print(f"wrote report -> {args.report}")

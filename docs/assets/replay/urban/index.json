@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "coordinates": "lidar: x forward, y left, z up; metres",
+  "velocity": "world velocity rotated into current lidar axes; no ego-velocity subtraction",
+  "point_limit": 2500,
+  "frames": [
+    {
+      "file": "000000.json",
+      "frame_id": 0,
+      "elapsed_s": 0.0,
+      "tracks": 0
+    },
+    {
+      "file": "000020.json",
+      "frame_id": 20,
+      "elapsed_s": 2.0,
+      "tracks": 1
+    },
+    {
+      "file": "000040.json",
+      "frame_id": 40,
+      "elapsed_s": 4.0,
+      "tracks": 1
+    },
+    {
+      "file": "000060.json",
+      "frame_id": 60,
+      "elapsed_s": 6.0,
+      "tracks": 1
+    },
+    {
+      "file": "000080.json",
+      "frame_id": 80,
+      "elapsed_s": 8.0,
+      "tracks": 1
+    },
+    {
+      "file": "000100.json",
+      "frame_id": 100,
+      "elapsed_s": 10.0,
+      "tracks": 2
+    },
+    {
+      "file": "000120.json",
+      "frame_id": 120,
+      "elapsed_s": 12.0,
+      "tracks": 3
+    },
+    {
+      "file": "000140.json",
+      "frame_id": 140,
+      "elapsed_s": 14.0,
+      "tracks": 4
+    },
+    {
+      "file": "000160.json",
+      "frame_id": 160,
+      "elapsed_s": 16.0,
+      "tracks": 5
+    },
+    {
+      "file": "000180.json",
+      "frame_id": 180,
+      "elapsed_s": 18.0,
+      "tracks": 5
+    },
+    {
+      "file": "000200.json",
+      "frame_id": 200,
+      "elapsed_s": 20.0,
+      "tracks": 2
+    },
+    {
+      "file": "000220.json",
+      "frame_id": 220,
+      "elapsed_s": 22.0,
+      "tracks": 2
+    },
+    {
+      "file": "000240.json",
+      "frame_id": 240,
+      "elapsed_s": 24.0,
+      "tracks": 1
+    },
+    {
+      "file": "000260.json",
+      "frame_id": 260,
+      "elapsed_s": 26.0,
+      "tracks": 3
+    },
+    {
+      "file": "000280.json",
+      "frame_id": 280,
+      "elapsed_s": 28.0,
+      "tracks": 6
+    },
+    {
+      "file": "000300.json",
+      "frame_id": 300,
+      "elapsed_s": 30.0,
+      "tracks": 2
+    },
+    {
+      "file": "000320.json",
+      "frame_id": 320,
+      "elapsed_s": 32.0,
+      "tracks": 0
+    },
+    {
+      "file": "000340.json",
+      "frame_id": 340,
+      "elapsed_s": 34.0,
+      "tracks": 1
+    },
+    {
+      "file": "000360.json",
+      "frame_id": 360,
+      "elapsed_s": 36.0,
+      "tracks": 2
+    },
+    {
+      "file": "000380.json",
+      "frame_id": 380,
+      "elapsed_s": 38.0,
+      "tracks": 7
+    },
+    {
+      "file": "000399.json",
+      "frame_id": 399,
+      "elapsed_s": 39.9,
+      "tracks": 3
+    }
+  ],
+  "dataset": "urban",
+  "town": "Town10HD_Opt",
+  "sensor_dt_s": 0.1,
+  "processed_frames": 400,
+  "export_every": 20,
+  "pipeline_config": {
+    "lidar": {
+      "x_range": [
+        -50.0,
+        50.0
+      ],
+      "y_range": [
+        -40.0,
+        40.0
+      ],
+      "z_range": [
+        -3.0,
+        4.0
+      ],
+      "ground_ransac": true,
+      "ground_dist_thresh": 0.2,
+      "ground_max_iter": 50,
+      "ground_max_normal_tilt": 0.3,
+      "dbscan_eps": 0.8,
+      "dbscan_min_samples": 8,
+      "voxel_size": 0.2,
+      "min_points": 12,
+      "min_extent": 0.2,
+      "max_extent": 20.0,
+      "max_height": 4.5,
+      "seed": 0
+    },
+    "tracker": {
+      "iou_threshold": 0.1,
+      "max_age": 5,
+      "min_hits": 3,
+      "process_noise": 2.0,
+      "measurement_noise": 0.5,
+      "yaw_smoothing": 0.5,
+      "dim_smoothing": 0.3,
+      "max_history": 50,
+      "motion_model": "imm",
+      "gating": false,
+      "gate_chi2": 9.21,
+      "turn_rate_noise": 0.3,
+      "transition_stay": 0.95
+    },
+    "predictor": {
+      "horizon": 3.0,
+      "step": 0.5,
+      "mode": "auto",
+      "min_turn_speed": 1.0,
+      "turn_rate_thresh": 0.03
+    },
+    "fusion": {
+      "iou_threshold": 0.1,
+      "score_boost": 0.3,
+      "overwrite_label": true,
+      "require_camera": true
+    },
+    "track_in_world": true
+  },
+  "detector": "fusion",
+  "evaluation": {
+    "similarity": "BEV IoU",
+    "class_agnostic": true,
+    "mot_iou": 0.3,
+    "id_iou": 0.5,
+    "hota_alphas": "0.05:0.05:0.95",
+    "fov_camera": "front",
+    "x_range": [
+      -50.0,
+      50.0
+    ],
+    "y_range": [
+      -40.0,
+      40.0
+    ],
+    "visibility_filter": false,
+    "raw_gt_count": 9718
+  }
+}

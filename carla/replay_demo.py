@@ -101,7 +101,8 @@ def render_frame(frame, output, renderer, overlay, args, elapsed):
 
 def run_replay(args):
     render = not args.no_video
-    needs_images = args.detector == "fusion" or (render and args.view in ("camera", "both"))
+    needs_images = (args.detector == "fusion" or args.export_replay is not None
+                    or (render and args.view in ("camera", "both")))
     ds = CarlaDataset(str(args.dataset), load_images=needs_images, count_points=False)
     n = len(ds) - args.start_frame
     if args.max_frames is not None:
@@ -115,6 +116,10 @@ def run_replay(args):
             raise ValueError(f"camera '{args.camera}' needs calibration")
 
     pipe = build_pipeline(args)
+    exporter = None
+    if args.export_replay is not None:
+        from perception_core.viz.replay import ReplayExporter
+        exporter = ReplayExporter(args.export_replay, args.export_points, args.camera)
     renderer = overlay = None
     if render:
         if args.view in ("bev", "both"):
@@ -143,6 +148,8 @@ def run_replay(args):
             gt_frames.append(selected_frame.ground_truth)
             gt_ids.append([int(d.attributes["gt_id"]) for d in selected_frame.ground_truth])
             track_frames.append(selected_out.tracks)
+            if exporter is not None and (offset % args.export_every == 0 or offset == n - 1):
+                exporter.add_frame(selected_frame, selected_out, frame.timestamp - first_time)
             if (render and offset % args.render_every == 0
                     and (args.gif_frames == 0 or len(images) < args.gif_frames)):
                 images.append(render_frame(selected_frame, selected_out, renderer, overlay,
@@ -202,6 +209,11 @@ def run_replay(args):
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report, indent=2) + "\n")
         print(f"wrote report -> {args.report}", flush=True)
+    if exporter is not None:
+        exporter.finish({'dataset': args.dataset.name, 'town': ds.meta.get('town'),
+                         'sensor_dt_s': ds.dt, 'processed_frames': n,
+                         'export_every': args.export_every, 'pipeline_config': asdict(pipe.cfg),
+                         'detector': args.detector, 'evaluation': report['evaluation']})
     return report
 
 
@@ -231,9 +243,13 @@ def main():
     ap.add_argument("--fps", type=float, help="playback FPS; defaults to the recording rate / render-every")
     ap.add_argument("--report", type=Path)
     ap.add_argument("--no-video", action="store_true")
+    ap.add_argument("--export-replay", type=Path, help="new directory for interactive JSON/RGB samples")
+    ap.add_argument("--export-every", type=int, default=20, help="export every Nth frame, plus the last")
+    ap.add_argument("--export-points", type=int, default=2500, help="maximum display points per frame")
     args = ap.parse_args()
     if (args.start_frame < 0 or args.warmup < 0 or args.gif_frames < 0 or args.render_every < 1
-            or args.height < 1 or (args.max_frames is not None and args.max_frames < 1)
+            or args.height < 1 or args.export_every < 1 or args.export_points < 1
+            or (args.max_frames is not None and args.max_frames < 1)
             or (args.fps is not None and args.fps <= 0)):
         ap.error("frame counts, image height and FPS must be in their valid positive ranges")
     if not all(0 < value <= 1 for value in (args.iou, args.id_iou, args.gate_iou)):

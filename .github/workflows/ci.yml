@@ -6,6 +6,37 @@ on:
   pull_request:
 
 jobs:
+  website:
+    name: Chinese website browser checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser test dependencies
+        run: |
+          npm install --prefix "$RUNNER_TEMP/website-tests" playwright@1.63.0
+          "$RUNNER_TEMP/website-tests/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Check the static website
+        env:
+          NODE_PATH: ${{ runner.temp }}/website-tests/node_modules
+          WEBSITE_SCREENSHOTS: ${{ runner.temp }}/website-screenshots
+        run: |
+          python -m http.server 8765 --bind 127.0.0.1 --directory docs > "$RUNNER_TEMP/website-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node tools/test_website.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: website-screenshots
+          path: ${{ runner.temp }}/website-screenshots
+
   test:
     name: unit tests (py${{ matrix.python-version }})
     runs-on: ubuntu-latest

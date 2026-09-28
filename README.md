@@ -1,6 +1,6 @@
 # Auto-Driver
 
-**Camera + LiDAR perception, multi-object tracking and motion forecasting — with CARLA replay and ROS 2 integration.**
+**自动驾驶感知、多目标跟踪与轨迹预测：从相机和激光雷达记录，到可复现的评估与 ROS 2 接入。**
 
 [![CI](https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml/badge.svg)](https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.9–3.11-3776AB)
@@ -8,126 +8,138 @@
 ![CARLA](https://img.shields.io/badge/CARLA-0.9.16-5b806e)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-[**Interactive project page ↗**](https://ayane225.github.io/Auto-Driver/) · [Quickstart](#quickstart) · [Measurements](docs/benchmarks/README.md) · [Engineering guide](docs/engineering.md)
-
-[![Auto-Driver: camera and bird's-eye tracking on a CARLA urban recording](docs/assets/overview.jpg)](https://ayane225.github.io/Auto-Driver/#demo)
-
-A reusable Python core takes sensor frames through **detection → camera confirmation → world-frame tracking → motion prediction**. Dataset readers and ROS 2 nodes connect the same algorithms to CARLA recordings, KITTI raw and synthetic scenes. The project covers perception and forecasting; planning and vehicle control are outside its current scope.
-
-| Measured improvement | Evaluation coverage | Engineering delivery |
-|---|---|---|
-| **6.86×** faster urban pipeline with 0.2 m voxel clustering | **800** CARLA sensor frames, plus six towns of actor trajectories | ROS 2 replay, timestamped TF, Docker, CPU tests and CI |
-| 888.5 → 129.5 ms mean; recall 0.2248 → 0.2231 | **92,751** held-out forecast windows; moving actors reported separately | HOTA / IDF1 checked against TrackEval |
-
-## Watch the system
+[**打开中文交互展示页 ↗**](https://ayane225.github.io/Auto-Driver/) · [快速开始](#快速开始) · [中文工程说明](docs/engineering_zh.md) · [评估协议](docs/benchmarks/README.md) · [English](README.en.md)
 
 <table>
 <tr>
-<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#demo"><img src="docs/assets/urban_poster.jpg" alt="Urban camera and BEV replay"/></a><br><b>Urban · Town10HD_Opt</b><br>Mixed traffic and pedestrians · <a href="docs/screenshots/demo_carla_urban.gif">GIF</a></td>
-<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#demo"><img src="docs/assets/highway_poster.jpg" alt="Highway camera and BEV replay"/></a><br><b>Highway · Town04_Opt</b><br>Vehicle traffic · <a href="docs/screenshots/demo_carla_highway.gif">GIF</a></td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#explorer"><img src="docs/assets/urban_poster.jpg" alt="城市相机与鸟瞰跟踪回放"/></a><br><b>城市 · Town10HD_Opt</b><br>混合交通与行人 · <a href="docs/screenshots/demo_carla_urban.gif">查看 GIF</a></td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#explorer"><img src="docs/assets/highway_poster.jpg" alt="高速相机与鸟瞰跟踪回放"/></a><br><b>高速 · Town04_Opt</b><br>车辆交通 · <a href="docs/screenshots/demo_carla_highway.gif">查看 GIF</a></td>
 </tr>
 </table>
 
-The [project page](https://ayane225.github.io/Auto-Driver/#demo) provides scene switching, native video controls and interactive result tables. Matching colors identify tracks in both views; arrows show estimated velocity and dotted lines show forecasts. The previews retain the original raw-point clustering run, with 120 rendered frames at 5 fps. **Every evaluation processes all 400 sensor frames per scenario. Playback speed is independent of processing throughput.**
+项目使用独立 Python 核心完成 **检测 → 相机确认 → 世界坐标系跟踪 → 运动预测**。CARLA、KITTI 和合成场景读取器提供统一输入，ROS 2 节点复用同一套算法。当前范围是感知与预测，不包含路径规划和车辆控制。
 
-## Performance on recorded sensors
-
-Profiling identified DBSCAN on the raw point cloud as the main urban bottleneck. The optional `--voxel-size 0.2` setting clusters point-count-weighted voxel centroids, then uses original points for bounding-box fitting. This reduces clustering cost while retaining the raw point density threshold; voxelization can still change cluster assignments.
-
-![Pipeline latency on the same urban and highway recordings](docs/assets/latency_comparison.png)
-
-| Scene / clustering | Pipeline mean / p95 | Precision | Recall | HOTA | IDF1 |
-|---|---:|---:|---:|---:|---:|
-| Urban / raw points | 888.5 / 1575.8 ms | 0.5566 | 0.2248 | 0.1833 | 0.1716 |
-| Urban / 0.2 m voxels | **129.5 / 171.2 ms** | 0.5565 | 0.2231 | 0.1840 | 0.1726 |
-| Highway / raw points | 289.5 / 599.6 ms | 0.2637 | 0.2391 | 0.2010 | 0.0586 |
-| Highway / 0.2 m voxels | **152.3 / 497.4 ms** | 0.2526 | 0.2298 | 0.1987 | 0.0585 |
-
-Same 400-frame inputs, YOLOv8n fusion and IMM tracker; one run per setting. Pipeline latency excludes five warmup frames, loading, evaluation and rendering. YOLO runs on RTX 5090; BLAS/OpenMP thread counts are 1. Metrics use class-agnostic BEV IoU, stable actor IDs, a shared LiDAR XY region and front-camera FOV, including occluded GT. HOTA averages 19 thresholds; IDF1 uses IoU 0.5. These are project measurements.
-
-**Current limits:** recall remains low, highway quality decreases slightly with voxelization, and both optimized means exceed the 100 ms interval of a 10 Hz sensor. The synthetic latency check in CI does not establish sensor-pipeline real-time performance.
-
-[Full protocol, MOTA and reproduction commands](docs/benchmarks/README.md) · [Urban raw](docs/benchmarks/urban_voxel_0.json) / [voxel](docs/benchmarks/urban_voxel_0.2.json) · [Highway raw](docs/benchmarks/highway_voxel_0.json) / [voxel](docs/benchmarks/highway_voxel_0.2.json)
-
-## Forecasting on held-out towns
-
-A separate evaluation uses recorded **ground-truth actor XY histories**: 2 s of observations to predict six future positions through 3 s. Whole towns are split before fitting: train on Town01/02/03, validate on Town04, test on Town05/10HD. Ridge learns residuals from constant velocity; scaling and training use training towns, and alpha is selected by validation ADE.
-
-![Forecasting comparison on all and moving test windows](docs/assets/forecasting_comparison.png)
-
-| Model | All ADE / FDE | Moving ADE / FDE | Moving miss rate (> 2 m) |
-|---|---:|---:|---:|
-| Constant velocity | **0.126 / 0.258 m** | **0.310 / 0.640 m** | 6.73% |
-| Constant acceleration | 0.227 / 0.505 m | 0.560 / 1.254 m | 14.33% |
-| Ridge residual | 0.167 / 0.350 m | 0.369 / 0.782 m | **6.30%** |
-
-There are 92,751 test windows, including 28,438 moving windows (at least 0.5 m displacement in the preceding second). Ridge lowers the test miss rate but has higher ADE/FDE than CV. It remains an experimental comparison; the runtime predictor uses CV/CTRV. These window-weighted results use overlapping histories and exclude detection/tracking errors.
-
-[Protocol and data hashes](docs/benchmarks/README.md#forecasting-town-disjoint-actor-histories) · [Full results](docs/benchmarks/forecasting/metrics.json) · [Evaluator](tools/eval_trajectories.py)
-
-## Engineering highlights
-
-| Concern | Implementation | Evidence / entry point |
+| 实测改进 | 评估规模 | 工程交付 |
 |---|---|---|
-| Reusable algorithms | NumPy / SciPy / scikit-learn core; optional detector backends | [Pipeline](src/perception_core/perception_core/pipeline.py) |
-| Moving ego vehicle | Transform detections into world coordinates before tracking; render output copies in the sensor frame | [Coordinate helpers](src/perception_core/perception_core/common/ego_frame.py) |
-| ROS 2 integration | Recorded LiDAR + timestamped TF → tracks, predictions and RViz markers | [Integration validation](docs/validation_2026-09-29.md) |
-| Evaluation | CLEAR-MOT, HOTA, IDF1, forecast error and per-stage latency | [Evaluation code](src/perception_core/perception_core/eval) |
-| Reproducibility | CPU tests, Python 3.9–3.11 CI, Docker and recorded configurations | [CI](.github/workflows/ci.yml) · [Docker](docs/engineering.md#docker-and-ros-2) |
+| 城市流水线平均耗时 **888.5 → 129.5 ms，提速 6.86×** | 两场景共 **800 帧**传感器记录 | ROS 2 回放、时间戳 TF、Docker、CPU 测试、CI |
+| 0.2 m 体素聚类；城市召回率 0.2248 → 0.2231 | 六城镇轨迹；**92,751** 个测试窗口 | HOTA / IDF1 与 TrackEval 对照 |
 
-Additional demonstrations are documented in the [engineering guide](docs/engineering.md):
+## 在线可以操作什么
 
-- **KITTI raw drive 0014:** camera confirmation reduces false positives from 5,198 to 469 (91%); recall falls from 0.251 to 0.225 and MOTA remains negative. [Report](docs/screenshots/metrics_kitti_fusion.json)
-- **Public VGGT camera front-end:** images → pseudo-LiDAR → shared pipeline. Qualitative only: monocular scale and cross-frame consistency are unresolved. [GIF](docs/screenshots/demo_vggt.gif)
-- **Synthetic scenes:** deterministic geometry, motion and latency checks without a simulator or GPU. [GIF](docs/screenshots/demo_prediction.gif)
+[展示页](https://ayane225.github.io/Auto-Driver/) 提供以下功能，无需安装仿真器：
 
-## Quickstart
+- **双场景视频回放：** 原始相机画面与鸟瞰跟踪图同步显示，支持播放、暂停与跳转。
+- **逐帧查看器：** 连续处理每个场景全部 400 帧后，导出 42 个采样时刻。拖动时间轴，切换点云、真值、跟踪、历史及预测图层；选择目标 ID 查看速度、尺寸和未更新帧数。
+- **点云交互：** 缩放、拖动画布，保存当前 PNG，下载当前帧 JSON。每帧最多显示 2,500 个抽样点，检测与评估仍使用原始输入。
+- **性能对照：** 切换城市/高速场景，比较原始点聚类与体素聚类，并导出 CSV。
+- **预测对照：** 按测试城镇和移动对象筛选总体指标；查看 24 个固定规则抽取的预测示例，与实际未来轨迹逐点对照，切换模型曲线并保存图像。
+- **运行命令生成：** 选择数据源、检测器、跟踪模型、设备和体素设置，生成可复制命令；不支持的组合会禁用。
 
-Run from the repository root with Python 3.9 or newer. The CPU core needs no CARLA server, ROS or torch.
+浏览器读取实际运行导出的数据，不在线执行感知模型。CARLA 是模拟器记录；KITTI 是独立的真实道路数据实验。24 秒视频沿用原始点聚类运行，逐帧查看器使用 0.2 m 体素配置，二者不是同一次计时实验。
+
+## 传感器回放：性能与质量
+
+剖析发现城市点云的主要耗时在 DBSCAN。新增 `--voxel-size 0.2`：以体素内点数为权重，在体素质心上聚类，再用原始点拟合包围框。它保留点数密度阈值，但近似邻域几何，可能改变聚类结果。
+
+| 场景 / 聚类 | 流水线平均 / p95 | Precision | Recall | HOTA | IDF1 |
+|---|---:|---:|---:|---:|---:|
+| 城市 / 原始点 | 888.5 / 1575.8 ms | 0.5566 | 0.2248 | 0.1833 | 0.1716 |
+| 城市 / 0.2 m 体素 | **129.5 / 171.2 ms** | 0.5565 | 0.2231 | 0.1840 | 0.1726 |
+| 高速 / 原始点 | 289.5 / 599.6 ms | 0.2637 | 0.2391 | 0.2010 | 0.0586 |
+| 高速 / 0.2 m 体素 | **152.3 / 497.4 ms** | 0.2526 | 0.2298 | 0.1987 | 0.0585 |
+
+每个设置运行一次，使用相同 400 帧输入、YOLOv8n 相机确认与 IMM 跟踪器。YOLO 使用 RTX 5090，BLAS/OpenMP 线程数设为 1。计时不含前 5 帧预热、读盘、渲染和评估。所有指标按统一 LiDAR XY 区域与前视相机 FOV 计算，使用稳定 actor ID，包含被遮挡真值。
+
+**当前限制：** 召回率仍低，体素化后高速场景的指标略降；两个优化后平均耗时均超过 10 Hz 传感器的 100 ms 间隔。视频播放速度和合成 GT 检测器的 CI 耗时不能作为完整传感器流水线实时性的证据。
+
+[详细协议与复现命令](docs/benchmarks/README.md) · [城市原始点](docs/benchmarks/urban_voxel_0.json) / [体素](docs/benchmarks/urban_voxel_0.2.json) · [高速原始点](docs/benchmarks/highway_voxel_0.json) / [体素](docs/benchmarks/highway_voxel_0.2.json)
+
+## 六城镇轨迹预测
+
+使用真值 XY 历史：2 秒观测，预测未来 3 秒的 6 个位置。整座城镇先划分再训练：Town01/02/03 训练，Town04 验证，Town05/10HD 测试。Ridge 学习相对于恒速度预测的残差；标准化与拟合仅使用训练集，正则化系数仅按验证集 ADE 选择。
+
+| 模型 | 全部对象 ADE / FDE | 移动对象 ADE / FDE | 移动对象未命中率（FDE > 2 m） |
+|---|---:|---:|---:|
+| 恒速度 CV | **0.126 / 0.258 m** | **0.310 / 0.640 m** | 6.73% |
+| 恒加速度 CA | 0.227 / 0.505 m | 0.560 / 1.254 m | 14.33% |
+| Ridge 残差回归 | 0.167 / 0.350 m | 0.369 / 0.782 m | **6.30%** |
+
+共 92,751 个测试窗口，其中 28,438 个在过去 1 秒位移至少 0.5 m，归为移动对象。Ridge 降低了测试未命中率，但 ADE/FDE 高于 CV，保留为离线对照；运行流水线继续使用 CV/CTRV。重叠窗口存在相关性，结果按窗口数加权，不包含感知与跟踪误差。
+
+[完整结果与原始文件哈希](docs/benchmarks/forecasting/metrics.json) · [评估脚本](tools/eval_trajectories.py) · [在线预测示例](https://ayane225.github.io/Auto-Driver/#forecast-examples)
+
+## 工程实现
+
+```mermaid
+flowchart LR
+    A[CARLA / KITTI / 合成数据] --> B[统一 Frame 输入]
+    B --> C[LiDAR 检测 + 可选相机确认]
+    C --> D[转换至世界坐标系]
+    D --> E[CV / IMM 多目标跟踪]
+    E --> F[CV / CTRV 轨迹预测]
+    F --> G[ROS 2 / 离线评估 / 网页回放]
+```
+
+- **独立算法核心：** NumPy、SciPy、scikit-learn；深度模型、可视化、ROS 和 CARLA 为可选依赖。
+- **移动自车坐标处理：** 检测框在传感器时间戳对应位姿下转到世界系；绘图时对输出副本变换回传感器系。
+- **ROS 2：** 点云与时间戳 TF 接入核心，发布跟踪、预测和 RViz 标记；[已有接入验证](docs/validation_2026-09-29.md)。
+- **可替换后端：** 几何 LiDAR 检测、YOLO 框确认、真值回放，以及公开 VGGT 的纯相机前端。
+- **KITTI：** 单序列中，相机确认将误报从 5,198 降至 469，但召回率下降且 MOTA 仍为负；[完整报告](docs/screenshots/metrics_kitti_fusion.json)。
+- **VGGT：** 图像转伪点云的定性集成展示，单目米制尺度和跨帧一致性尚未解决；[演示 GIF](docs/screenshots/demo_vggt.gif)。
+
+## 快速开始
+
+Python 3.9 或更新版本；CPU 核心不需要 CARLA、ROS 或 torch。在仓库根目录运行：
 
 ```bash
 git clone https://github.com/AYANE225/Auto-Driver.git
 cd Auto-Driver
 pip install -e './src/perception_core[test]'
-
-# Run perception and write metrics without rendering.
-python tools/run_demo.py --frames 60 --detector lidar --no-video --report metrics.json
+python tools/run_demo.py --frames 60 --detector lidar --tracker imm \
+  --no-video --report outputs/demo.json
 python -m pytest -q src/perception_core/tests
+```
 
-# Optional GIF (matplotlib + Pillow).
+生成合成场景 GIF：
+
+```bash
 pip install matplotlib pillow
 python tools/run_demo.py --frames 60 --detector lidar --tracker imm \
   --gif outputs/demo.gif --report outputs/demo.json
 ```
 
-Replay local CARLA recordings with camera fusion and weighted voxel clustering:
+用自己的 CARLA 记录运行相机融合，并导出网页查看数据：
 
 ```bash
 pip install -e './src/perception_core[yolo]'
+pip install pillow
 python carla/replay_demo.py --dataset carla/data/urban --detector fusion \
   --tracker imm --device cuda:0 --fov-eval --voxel-size 0.2 \
-  --no-video --report outputs/urban.json
-
-# Forecasting: requires all six recorded town files.
-python tools/eval_trajectories.py --root carla/data/trajectories --out outputs/forecasting
+  --no-video --report outputs/urban.json \
+  --export-replay outputs/urban_viewer --export-every 20
 ```
 
-Raw recordings and pretrained weights are excluded from Git. See [CARLA setup and recording](carla/README.md), [benchmark reproduction](docs/benchmarks/README.md), and [Docker / ROS 2 commands](docs/engineering.md#docker-and-ros-2). In a sourced ROS environment, use `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` if ROS pytest plugins conflict. Common tasks are available through `make help`.
+原始记录与模型权重不在 Git 中，需先准备；导出目录应为新的目录。更多步骤见[中文工程说明](docs/engineering_zh.md)、[CARLA 采集说明](carla/README.md)及网页的[命令生成器](https://ayane225.github.io/Auto-Driver/#run)。ROS 环境中若 pytest 插件冲突，可设置 `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`。
 
-To preview the project website: `python -m http.server 8000 --directory docs`, then open `http://localhost:8000`. Regenerate figures and video previews with `python tools/make_showcase_assets.py --out outputs/showcase-assets --video` (requires ffmpeg for video).
+```bash
+# 六城镇预测评估，需要全部录制文件。
+python tools/eval_trajectories.py --root carla/data/trajectories --out outputs/forecasting
+# 本地预览网页。
+python -m http.server 8000 --directory docs
+```
 
-## Repository map
+打开 `http://localhost:8000`。网页无需构建工具；功能与数据在仓库内，浏览器按需加载回放帧。常用开发命令见 `make help`。网页浏览器回归检查已接入 CI；[本轮验证记录](docs/website_validation_2026-09-29.md)列出数据核对、交互测试与显示范围。
+
+## 目录
 
 ```text
-src/perception_core/      Algorithms, dataset readers, evaluation and tests
-src/av_perception_msgs/   ROS 2 tracked / predicted object interfaces
-src/av_perception/        ROS 2 source and perception nodes
-src/av_bringup/           Launch files, parameters and RViz configuration
-carla/                   Scenario and actor-trajectory recording; offline replay
-tools/                   Demos, benchmarks, forecasting evaluation, figure generation
-docs/                    Project website, reports and engineering documentation
+src/perception_core/      算法、数据读取、评估、网页导出与测试
+src/av_perception_msgs/   ROS 2 跟踪与预测接口
+src/av_perception/        ROS 2 数据源和感知节点
+src/av_bringup/           启动文件、参数与 RViz 配置
+carla/                   场景与轨迹采集、离线回放
+tools/                   演示、评估、预测示例导出、图表生成
+docs/                    中文展示页、实测报告、工程说明
 ```
 
-Python · NumPy · SciPy · scikit-learn · ROS 2 Humble · CARLA · YOLO · Matplotlib · pytest · Docker · GitHub Actions. Optional VGGT integration uses the public pretrained model.
-
-MIT licensed code — see [LICENSE](LICENSE). External datasets and pretrained models retain their respective licenses.
+代码采用 [MIT 许可](LICENSE)。外部数据与预训练模型适用各自许可。
