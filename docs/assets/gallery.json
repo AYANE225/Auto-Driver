@@ -1,0 +1,64 @@
+{
+  "kitti": {
+    "source": "demo_kitti.gif",
+    "source_sha256": "63bf2c8e2f519bc277f762e063b8dd1ebb8784fba45cc2130ee753cc0410284c",
+    "source_metadata": {
+      "programs": [],
+      "streams": [
+        {
+          "width": 900,
+          "height": 700,
+          "nb_frames": "314"
+        }
+      ],
+      "format": {
+        "duration": "31.400000"
+      }
+    },
+    "video_metadata": {
+      "programs": [],
+      "streams": [
+        {
+          "width": 900,
+          "height": 700,
+          "nb_frames": "314"
+        }
+      ],
+      "format": {
+        "duration": "31.400000"
+      }
+    },
+    "note": "Existing experiment visualization; playback timing is not processing latency."
+  },
+  "vggt": {
+    "source": "demo_vggt.gif",
+    "source_sha256": "ef868d00dd6f5a72534ba8057b62037ef8a35b41c00266479e4e79c34003b1b5",
+    "source_metadata": {
+      "programs": [],
+      "streams": [
+        {
+          "width": 900,
+          "height": 700,
+          "nb_frames": "40"
+        }
+      ],
+      "format": {
+        "duration": "4.800000"
+      }
+    },
+    "video_metadata": {
+      "programs": [],
+      "streams": [
+        {
+          "width": 900,
+          "height": 700,
+          "nb_frames": "40"
+        }
+      ],
+      "format": {
+        "duration": "4.800000"
+      }
+    },
+    "note": "Existing experiment visualization; playback timing is not processing latency."
+  }
+}

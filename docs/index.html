@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0c131b" />
     <meta
       name="description"
-      content="Auto-Driver 自动驾驶感知项目：相机与激光雷达融合、多目标跟踪、轨迹预测、ROS 2 接入。在线逐帧查看实录点云、预测对照和可复现评估。"
+      content="Auto-Driver 自动驾驶感知项目：相机与激光雷达融合、多目标跟踪、轨迹预测、ROS 2 接入。在线旋转三维点云、拆解实测耗时、调整匹配阈值、查看预测与实车实验。"
     />
     <meta property="og:title" content="Auto-Driver · 从传感器数据到运动轨迹" />
     <meta
@@ -15,7 +15,7 @@
     />
     <meta
       property="og:image"
-      content="https://ayane225.github.io/Auto-Driver/assets/overview.jpg"
+      content="https://ayane225.github.io/Auto-Driver/assets/pointcloud_preview.jpg"
     />
     <title>Auto-Driver · 自动驾驶感知与轨迹预测</title>
     <link
@@ -23,9 +23,11 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2390e0b8'/%3E%3Cpath d='M14 48L32 14L50 48M22 34H42' fill='none' stroke='%230c131b' stroke-width='5'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="assets/site.css" />
+    <link rel="stylesheet" href="assets/showcase.css" />
     <script src="assets/site.js" defer></script>
     <script src="assets/tracking.js" defer></script>
     <script src="assets/explorers.js" defer></script>
+    <script src="assets/showcase.js" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">跳转到主要内容</a>
@@ -45,8 +47,9 @@
         导航
       </button>
       <nav id="main-nav" aria-label="主要导航">
-        <a href="#explorer">逐帧查看</a><a href="#results">实测结果</a
-        ><a href="#forecasting">轨迹预测</a><a href="#run">本地运行</a
+        <a href="#pointcloud">3D 点云</a><a href="#explorer">逐帧查看</a
+        ><a href="#results">实测结果</a><a href="#forecasting">轨迹预测</a
+        ><a href="#run">本地运行</a
         ><a class="github" href="https://github.com/AYANE225/Auto-Driver"
           >GitHub ↗</a
         >
@@ -65,18 +68,18 @@
               核心。用实录场景展示系统，用可复现的评估说明效果。
             </p>
           </div>
-          <a class="hero-preview" href="#explorer"
+          <a class="hero-preview" href="#pointcloud"
             ><img
-              src="assets/urban_poster.jpg"
-              alt="CARLA 城市场景中的相机画面与鸟瞰跟踪结果"
-              width="1186"
-              height="448"
-            /><span>查看点云、目标与预测轨迹 <b>↗</b></span></a
+              src="assets/pointcloud_preview.jpg"
+              alt="CARLA 城市三维点云与同帧相机画面"
+              width="1240"
+              height="560"
+            /><span>转动三维点云，查看空间结构 <b>↗</b></span></a
           >
         </div>
         <div class="hero-actions">
-          <a class="button primary" href="#explorer"
-            >打开逐帧查看器 <span>↘</span></a
+          <a class="button primary" href="#pointcloud"
+            >进入 3D 场景 <span>↘</span></a
           ><a class="text-link" href="#demo">播放系统演示 ↓</a
           ><span class="hero-stack">Python + C++ · CARLA · ROS 2 Humble</span>
         </div>
@@ -97,6 +100,142 @@
             <small>训练、验证、测试按城镇划分</small>
           </div>
         </div>
+      </section>
+      <nav class="experience-links wrap" aria-label="交互体验导航">
+        <a href="#pointcloud"
+          ><b>01 / 旋转场景</b><span>从空间里看点云与目标 ↗</span></a
+        >
+        <a href="#latency-lab"
+          ><b>02 / 拆开耗时</b><span>看清 C++ 加速发生在哪 ↗</span></a
+        >
+        <a href="#association-lab"
+          ><b>03 / 调整匹配</b><span>亲手改变阈值与分配结果 ↗</span></a
+        >
+        <a href="#gallery"
+          ><b>04 / 更多实验</b><span>KITTI 实车与 VGGT 预览 ↗</span></a
+        >
+      </nav>
+      <section class="section wrap" id="pointcloud">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">交互 / 三维点云</p>
+            <h2>换一个角度，看见场景的空间结构。</h2>
+          </div>
+          <p>
+            拖动旋转，滚轮缩放。<br />同一帧的点云、目标框与相机画面一起查看。
+          </p>
+        </div>
+        <div class="pointcloud-panel">
+          <div class="cloud-toolbar">
+            <label
+              >场景
+              <select id="cloud-scene">
+                <option value="urban">城市 · Town10HD</option>
+                <option value="highway">高速 · Town04</option>
+              </select></label
+            >
+            <div class="segmented compact" aria-label="三维观察角度">
+              <button
+                type="button"
+                data-cloud-view="orbit"
+                aria-pressed="true"
+                class="selected"
+              >
+                斜视</button
+              ><button type="button" data-cloud-view="top" aria-pressed="false">
+                俯视</button
+              ><button
+                type="button"
+                data-cloud-view="front"
+                aria-pressed="false"
+              >
+                前视
+              </button>
+            </div>
+            <button type="button" id="cloud-spin" aria-pressed="false">
+              环绕观察
+            </button>
+            <button type="button" id="cloud-save" disabled>
+              保存视图 PNG ↓
+            </button>
+          </div>
+          <div class="cloud-stage" id="cloud-stage">
+            <canvas
+              id="cloud-canvas"
+              width="1200"
+              height="600"
+              tabindex="0"
+              aria-label="三维点云：方向键旋转，加减键缩放"
+              aria-describedby="cloud-status cloud-help"
+            ></canvas>
+            <div class="cloud-caption">
+              <span class="cloud-badge">RECORDED / CARLA</span
+              ><strong id="cloud-frame-label">正在准备场景</strong
+              ><span>点颜色表示高度 · 彩色框表示跟踪 ID</span>
+            </div>
+            <figure class="cloud-camera">
+              <img
+                id="cloud-camera"
+                hidden
+                alt="当前三维点云对应时刻的前视相机画面"
+              />
+              <figcaption>同帧相机 / FRONT RGB</figcaption>
+            </figure>
+            <div class="cloud-compass" aria-hidden="true">
+              x 前方 · y 左侧 · z 向上<br />LiDAR 坐标系 / m
+            </div>
+          </div>
+          <div class="cloud-controls">
+            <label class="cloud-timeline"
+              >采样帧
+              <input
+                id="cloud-frame"
+                type="range"
+                min="0"
+                max="20"
+                value="6"
+                disabled
+                aria-label="三维场景采样帧"
+            /></label>
+            <label
+              >点数
+              <select id="cloud-density">
+                <option value="5000">轻量 5,000</option>
+                <option value="12000" selected>标准 12,000</option>
+                <option value="20000">精细 20,000</option>
+              </select></label
+            >
+            <label
+              >缩放
+              <input
+                id="cloud-zoom"
+                type="range"
+                min="0.6"
+                max="2.5"
+                step="0.1"
+                value="1"
+                aria-label="三维场景缩放"
+            /></label>
+            <label><input id="cloud-gt" type="checkbox" /> 真值框</label>
+            <label
+              ><input id="cloud-tracks" type="checkbox" checked /> 跟踪框</label
+            >
+            <label
+              ><input id="cloud-paths" type="checkbox" checked />
+              历史轨迹</label
+            >
+          </div>
+          <p id="cloud-status" class="cloud-status" role="status">
+            载入后可旋转查看。也可使用下方视频与逐帧查看器。
+          </p>
+        </div>
+        <p class="fine-print" id="cloud-help">
+          使用已有 42 个采样时刻，额外从对应原始记录导出最多 20,000
+          个点，默认显示 12,000 点。点坐标量化为 2 mm
+          步长，仅用于显示；颜色映射点的高度，不代表类别。框按评估区域及相机视野筛选，沿用
+          C++ 改动前的 0.2 m 体素 + YOLO + IMM
+          输出。环绕观察只移动观察视角，不推进时间。触屏拖动或键盘方向键也可旋转。
+        </p>
       </section>
       <section class="section wrap" id="demo">
         <div class="section-head">
@@ -261,7 +400,8 @@
           个点供显示，检测仍使用原始输入。目标框与轨迹按评估区域和前视相机视野筛选。坐标为当前
           LiDAR 坐标系：x 向前、y 向左、z 向上，单位
           m。速度为世界系估计速度在当前 LiDAR
-          轴上的表达，未减去自车速度。按帧查看速度可自行控制，不代表系统实时运行速度。视频和逐帧数据均保留 C++ 改动前的跟踪配置。
+          轴上的表达，未减去自车速度。按帧查看速度可自行控制，不代表系统实时运行速度。视频和逐帧数据均保留
+          C++ 改动前的跟踪配置。
         </p>
       </section>
       <section class="section wrap" id="results">
@@ -270,7 +410,9 @@
             <p class="eyebrow">03 / 性能与质量</p>
             <h2>先定位耗时，再衡量取舍。</h2>
           </div>
-          <p>相同记录、检测器与跟踪器。<br />本组为旧版跟踪器的体素聚类对照。</p>
+          <p>
+            相同记录、检测器与跟踪器。<br />本组为旧版跟踪器的体素聚类对照。
+          </p>
         </div>
         <div class="results-layout">
           <div class="result-story">
@@ -406,64 +548,370 @@
             <p class="eyebrow">03B / C++ 跟踪加速</p>
             <h2>批量计算 IoU，跟踪均值降到约 3 ms。</h2>
           </div>
-          <p>固定检测输入，三轮交叉顺序对照。<br />仅替换计算后端时，800 帧轨迹状态一致。</p>
+          <p>
+            固定检测输入，三轮交叉顺序对照。<br />仅替换计算后端时，800
+            帧轨迹状态一致。
+          </p>
         </div>
         <div class="results-layout">
           <div class="result-story">
             <span class="number-label">Python + C++</span>
             <h3>将耗时的旋转框交集<br />交给原生批量计算。</h3>
-            <p>缓存框顶点，先排除不相交的候选，再计算多边形交集。Python 保留滤波、关联与预测，评估器沿用原实现。</p>
-            <p>提前处理匹配阈值修复了边界情况下有效匹配被挤占的问题。这两段记录的 HOTA、IDF1 与 MOTA 没有提高；π 周期框朝向平滑也未稳定改善指标，保留为可选项。</p>
-            <a class="text-link" href="benchmarks/tracking/README.md">安装、协议与复现命令 ↗</a>
+            <p>
+              缓存框顶点，先排除不相交的候选，再计算多边形交集。Python
+              保留滤波、关联与预测，评估器沿用原实现。
+            </p>
+            <p>
+              提前处理匹配阈值修复了边界情况下有效匹配被挤占的问题。这两段记录的
+              HOTA、IDF1 与 MOTA 没有提高；π
+              周期框朝向平滑也未稳定改善指标，保留为可选项。
+            </p>
+            <a class="text-link" href="benchmarks/tracking/README.md"
+              >安装、协议与复现命令 ↗</a
+            >
           </div>
           <div class="result-panel">
-            <div class="panel-heading"><h3>跟踪与流水线耗时</h3>
-            <div class="segmented compact" aria-label="C++ 对照场景">
-              <button type="button" class="selected" data-native-scene="urban" aria-pressed="true">城市</button>
-              <button type="button" data-native-scene="highway" aria-pressed="false">高速</button>
+            <div class="panel-heading">
+              <h3>跟踪与流水线耗时</h3>
+              <div class="segmented compact" aria-label="C++ 对照场景">
+                <button
+                  type="button"
+                  class="selected"
+                  data-native-scene="urban"
+                  aria-pressed="true"
+                >
+                  城市
+                </button>
+                <button
+                  type="button"
+                  data-native-scene="highway"
+                  aria-pressed="false"
+                >
+                  高速
+                </button>
+              </div>
             </div>
-            </div>
-            <p class="small" id="native-latency-scene">城市 · 仅 tracker.update 平均耗时 · 越低越好</p>
+            <p class="small" id="native-latency-scene">
+              城市 · 仅 tracker.update 平均耗时 · 越低越好
+            </p>
             <div class="latency-row">
-              <div><span>Python 原逻辑</span><strong id="native-python-time">44.7 ms</strong></div>
-              <div class="bar-track"><span class="bar raw" style="width: 100%"></span></div>
+              <div>
+                <span>Python 原逻辑</span
+                ><strong id="native-python-time">44.7 ms</strong>
+              </div>
+              <div class="bar-track">
+                <span class="bar raw" style="width: 100%"></span>
+              </div>
             </div>
             <div class="latency-row">
-              <div><span>C++ 原逻辑</span><strong id="native-cpp-time">3.2 ms</strong></div>
-              <div class="bar-track"><span id="native-cpp-bar" class="bar" style="width: 7.2%"></span></div>
+              <div>
+                <span>C++ 原逻辑</span
+                ><strong id="native-cpp-time">3.2 ms</strong>
+              </div>
+              <div class="bar-track">
+                <span
+                  id="native-cpp-bar"
+                  class="bar"
+                  style="width: 7.2%"
+                ></span>
+              </div>
             </div>
-            <p class="small" id="native-speedup">提速 13.9× · 仅跟踪计算，不含检测</p>
+            <p class="small" id="native-speedup">
+              提速 13.9× · 仅跟踪计算，不含检测
+            </p>
             <div class="table-scroll">
               <table>
-                <caption>完整流水线：同次环境各运行一次（平均 / p95，ms）</caption>
-                <thead><tr><th scope="col">配置</th><th scope="col">耗时</th></tr></thead>
-                <tbody id="native-pipeline"><tr><th scope="row">Python 原逻辑</th><td>130.2 / 171.8</td></tr><tr><th scope="row">C++ + 阈值处理</th><td>89.3 / 104.0</td></tr></tbody>
+                <caption>
+                  完整流水线：同次环境各运行一次（平均 / p95，ms）
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">配置</th>
+                    <th scope="col">耗时</th>
+                  </tr>
+                </thead>
+                <tbody id="native-pipeline">
+                  <tr>
+                    <th scope="row">Python 原逻辑</th>
+                    <td>130.2 / 171.8</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">C++ + 阈值处理</th>
+                    <td>89.3 / 104.0</td>
+                  </tr>
+                </tbody>
               </table>
             </div>
             <div class="report-links">
-              <a id="native-ablation-report" href="benchmarks/tracking/urban_ablation.json">消融 JSON ↗</a>
-              <a id="native-pipeline-report" href="benchmarks/tracking/urban_cpp_threshold.json">流水线 JSON ↗</a>
+              <a
+                id="native-ablation-report"
+                href="benchmarks/tracking/urban_ablation.json"
+                >消融 JSON ↗</a
+              >
+              <a
+                id="native-pipeline-report"
+                href="benchmarks/tracking/urban_cpp_threshold.json"
+                >流水线 JSON ↗</a
+              >
             </div>
-            <p class="small" id="native-status" role="status">数据来自本地 400 帧实测。</p>
+            <p class="small" id="native-status" role="status">
+              数据来自本地 400 帧实测。
+            </p>
           </div>
         </div>
         <details class="protocol-note">
           <summary>展开五种配置的精度消融</summary>
           <div class="table-scroll">
             <table>
-              <caption id="native-ablation-caption">城市 · 固定检测输入 · 400 帧</caption>
-              <thead><tr><th scope="col">配置</th><th scope="col">跟踪均值 ms</th><th scope="col">HOTA</th><th scope="col">IDF1</th><th scope="col">MOTA</th></tr></thead>
+              <caption id="native-ablation-caption">
+                城市 · 固定检测输入 · 400 帧
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">配置</th>
+                  <th scope="col">跟踪均值 ms</th>
+                  <th scope="col">HOTA</th>
+                  <th scope="col">IDF1</th>
+                  <th scope="col">MOTA</th>
+                </tr>
+              </thead>
               <tbody id="native-ablation">
-                <tr><th scope="row">Python 原逻辑</th><td>44.71</td><td>0.1840</td><td>0.1726</td><td>0.0445</td></tr>
-                <tr><th scope="row">C++ 原逻辑</th><td>3.22</td><td>0.1840</td><td>0.1726</td><td>0.0445</td></tr>
-                <tr><th scope="row">C++ + π 周期</th><td>3.18</td><td>0.1839</td><td>0.1715</td><td>0.0440</td></tr>
-                <tr><th scope="row">C++ + 阈值处理（默认）</th><td>3.19</td><td>0.1840</td><td>0.1726</td><td>0.0445</td></tr>
-                <tr><th scope="row">C++ + 两项改动</th><td>3.21</td><td>0.1839</td><td>0.1715</td><td>0.0440</td></tr>
+                <tr>
+                  <th scope="row">Python 原逻辑</th>
+                  <td>44.71</td>
+                  <td>0.1840</td>
+                  <td>0.1726</td>
+                  <td>0.0445</td>
+                </tr>
+                <tr>
+                  <th scope="row">C++ 原逻辑</th>
+                  <td>3.22</td>
+                  <td>0.1840</td>
+                  <td>0.1726</td>
+                  <td>0.0445</td>
+                </tr>
+                <tr>
+                  <th scope="row">C++ + π 周期</th>
+                  <td>3.18</td>
+                  <td>0.1839</td>
+                  <td>0.1715</td>
+                  <td>0.0440</td>
+                </tr>
+                <tr>
+                  <th scope="row">C++ + 阈值处理（默认）</th>
+                  <td>3.19</td>
+                  <td>0.1840</td>
+                  <td>0.1726</td>
+                  <td>0.0445</td>
+                </tr>
+                <tr>
+                  <th scope="row">C++ + 两项改动</th>
+                  <td>3.21</td>
+                  <td>0.1839</td>
+                  <td>0.1715</td>
+                  <td>0.0440</td>
+                </tr>
               </tbody>
             </table>
           </div>
         </details>
-        <p class="fine-print">跟踪计时排除前 5 帧，三轮轮换配置顺序；完整流水线另行实测，不含读盘、渲染和评估。仍使用 0.2 m 体素、YOLOv8n、IMM 与前视相机评估区域。C++ 原逻辑状态一致不代表新匹配策略状态完全相同；两段记录只用于开发对照，未证明新场景泛化。已有视频与逐帧查看数据保留旧跟踪配置。</p>
+        <p class="fine-print">
+          跟踪计时排除前 5
+          帧，三轮轮换配置顺序；完整流水线另行实测，不含读盘、渲染和评估。仍使用
+          0.2 m 体素、YOLOv8n、IMM 与前视相机评估区域。C++
+          原逻辑状态一致不代表新匹配策略状态完全相同；两段记录只用于开发对照，未证明新场景泛化。已有视频与逐帧查看数据保留旧跟踪配置。
+        </p>
+      </section>
+      <section class="section wrap" id="latency-lab">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">交互 / 耗时拆解</p>
+            <h2>省下的时间，来自哪一步？</h2>
+          </div>
+          <p>
+            检测、相机确认、跟踪、预测。<br />用同一尺度比较 C++
+            改动前后的平均耗时。
+          </p>
+        </div>
+        <div class="latency-lab-panel">
+          <div class="panel-heading">
+            <h3>每帧流水线平均耗时</h3>
+            <div class="segmented compact" aria-label="分阶段耗时场景">
+              <button
+                type="button"
+                data-latency-scene="urban"
+                class="selected"
+                aria-pressed="true"
+              >
+                城市</button
+              ><button
+                type="button"
+                data-latency-scene="highway"
+                aria-pressed="false"
+              >
+                高速
+              </button>
+            </div>
+          </div>
+          <div class="stage-legend" aria-label="选择耗时阶段">
+            <button type="button" data-stage="detect_ms" aria-pressed="false">
+              <i></i>LiDAR 检测</button
+            ><button type="button" data-stage="fuse_ms" aria-pressed="false">
+              <i></i>相机确认</button
+            ><button
+              type="button"
+              data-stage="track_ms"
+              class="selected"
+              aria-pressed="true"
+            >
+              <i></i>坐标转换与跟踪</button
+            ><button type="button" data-stage="predict_ms" aria-pressed="false">
+              <i></i>运动预测
+            </button>
+          </div>
+          <div
+            class="stage-chart"
+            id="stage-chart"
+            role="group"
+            aria-label="等待载入分阶段耗时"
+          >
+            <div class="budget-line"><span>100 ms / 10 Hz</span></div>
+            <div class="stage-row">
+              <div>
+                <b>Python 原逻辑</b
+                ><strong id="stage-old-total">130.2 ms</strong>
+              </div>
+              <div class="stage-stack" id="stage-old"></div>
+            </div>
+            <div class="stage-row">
+              <div>
+                <b>C++ + 阈值处理</b
+                ><strong id="stage-new-total">89.3 ms</strong>
+              </div>
+              <div class="stage-stack" id="stage-new"></div>
+            </div>
+            <div class="chart-axis">
+              <span>0</span><span>50</span><span>100</span><span>150</span
+              ><span>200 ms</span>
+            </div>
+          </div>
+          <div class="stage-detail">
+            <div>
+              <span id="stage-name">坐标转换与跟踪</span
+              ><strong id="stage-change">43.1 → 3.4 ms</strong>
+            </div>
+            <p id="stage-explanation">
+              批量 C++ IoU
+              减少旋转框交集计算开销；这一阶段也包含将检测框转换到世界坐标系。
+            </p>
+            <div>
+              <span>新流水线总耗时 p95</span
+              ><strong id="stage-p95">104.0 ms</strong>
+            </div>
+          </div>
+          <div class="report-links">
+            <a
+              id="stage-old-report"
+              href="benchmarks/tracking/urban_python_original.json"
+              >Python 原报告 ↗</a
+            ><a
+              id="stage-new-report"
+              href="benchmarks/tracking/urban_cpp_threshold.json"
+              >C++ 原报告 ↗</a
+            >
+          </div>
+          <p id="stage-status" class="small" role="status">
+            每配置一次完整 400 帧回放；均值可按阶段相加，p95 不按阶段相加。
+          </p>
+        </div>
+        <p class="fine-print">
+          选择图例或色块可查看具体阶段。图中均值来自本轮完整流水线
+          JSON，计时排除前 5 帧，不含读盘、渲染和评估。100 ms 是 10 Hz
+          传感器的帧间隔，平均耗时低于它不保证逐帧满足截止时间。
+        </p>
+      </section>
+      <section class="section wrap" id="association-lab">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">交互 / 关联算法</p>
+            <h2>一个阈值，为什么会改变匹配？</h2>
+          </div>
+          <p>手动调整 IoU 阈值。<br />观察分配前后过滤如何产生不同结果。</p>
+        </div>
+        <div class="association-panel">
+          <div class="association-controls">
+            <label
+              >示例
+              <select id="association-case">
+                <option value="conflict">低于阈值的边挤占有效匹配</option>
+                <option value="weight">最大总 IoU 与最大匹配数</option>
+              </select></label
+            ><label class="association-threshold"
+              >IoU 阈值
+              <input
+                type="range"
+                id="association-threshold"
+                min="0.1"
+                max="0.9"
+                step="0.01"
+                value="0.6"
+              /><output id="association-threshold-label">0.60</output></label
+            ><button type="button" id="association-reset">重置示例</button>
+          </div>
+          <div class="association-grid">
+            <div class="association-matrix">
+              <p class="eyebrow">输入 / BEV IoU</p>
+              <table>
+                <caption>
+                  轨迹与检测的相似度
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">轨迹 / 检测</th>
+                    <th scope="col">A</th>
+                    <th scope="col">B</th>
+                  </tr>
+                </thead>
+                <tbody id="association-matrix"></tbody>
+              </table>
+              <p class="small">灰色单元格低于当前阈值。</p>
+            </div>
+            <div class="association-result">
+              <h3>先分配，再过滤</h3>
+              <svg
+                id="association-old"
+                viewBox="0 0 280 170"
+                role="img"
+                aria-label="旧策略的分配图"
+              ></svg>
+              <p id="association-old-result"></p>
+            </div>
+            <div class="association-result">
+              <h3>先处理阈值，再分配</h3>
+              <svg
+                id="association-new"
+                viewBox="0 0 280 170"
+                role="img"
+                aria-label="新策略的分配图"
+              ></svg>
+              <p id="association-new-result"></p>
+            </div>
+          </div>
+          <p
+            id="association-explanation"
+            class="association-explanation"
+            aria-live="polite"
+          >
+            阈值 0.60 时，旧策略选择两条 0.59 的边，过滤后没有匹配；新策略保留
+            IoU 0.60 的有效匹配。
+          </p>
+        </div>
+        <p class="fine-print">
+          这里使用确定性的 2×2
+          教学矩阵，在浏览器中演示分配目标；不是传感器场景，也不用于精度统计。新策略最大化有效
+          IoU 总和，允许未匹配，不优先最大匹配数量。两段实录中的质量消融见上方
+          C++ 对照。
+        </p>
       </section>
       <section class="section wrap" id="forecasting">
         <div class="section-head">
@@ -772,9 +1220,78 @@
           <details>
             <summary>为什么流水线提速后仍不称为实时系统？</summary>
             <p>
-              C++ 加速后的均值与尾部耗时见新对照，但计时不含读盘、渲染和评估，也未验证持续在线运行的截止时间。视频播放速度不能代表处理速度；性能结果同时列出平均值、p95 和计时范围。
+              C++
+              加速后的均值与尾部耗时见新对照，但计时不含读盘、渲染和评估，也未验证持续在线运行的截止时间。视频播放速度不能代表处理速度；性能结果同时列出平均值、p95
+              和计时范围。
             </p>
           </details>
+        </div>
+      </section>
+      <section class="section wrap" id="gallery">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">更多 / 实验视频</p>
+            <h2>从实车记录，到纯相机探索。</h2>
+          </div>
+          <p>
+            直接播放已有实验输出。<br />视频时序保留原
+            GIF，处理速度以评估报告为准。
+          </p>
+        </div>
+        <div class="experiment-gallery">
+          <article>
+            <div class="gallery-tag">KITTI / 真实道路数据</div>
+            <video
+              id="kitti-video"
+              controls
+              playsinline
+              muted
+              preload="none"
+              poster="assets/kitti_poster.jpg"
+              aria-label="KITTI 实车记录感知演示"
+            >
+              <source src="assets/kitti.mp4" type="video/mp4" />
+              浏览器不支持视频，<a href="assets/kitti.mp4">下载 MP4</a>。
+            </video>
+            <div class="gallery-description">
+              <h3>实车道路中的几何检测</h3>
+              <p>
+                来自既有 KITTI drive 0014
+                演示。独立融合评估中，相机确认减少误报，但召回率降低，MOTA
+                仍为负；视频用于观察行为，指标以对应报告为准。
+              </p>
+              <a
+                href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/metrics_kitti_fusion.json"
+                >查看融合评估 ↗</a
+              >
+            </div>
+          </article>
+          <article>
+            <div class="gallery-tag">VGGT / 纯相机集成</div>
+            <video
+              id="vggt-video"
+              controls
+              playsinline
+              muted
+              preload="none"
+              poster="assets/vggt_poster.jpg"
+              aria-label="VGGT 纯相机前端定性演示"
+            >
+              <source src="assets/vggt.mp4" type="video/mp4" />
+              浏览器不支持视频，<a href="assets/vggt.mp4">下载 MP4</a>。
+            </video>
+            <div class="gallery-description">
+              <h3>图像到伪点云，再进入统一接口</h3>
+              <p>
+                使用公开预训练 VGGT
+                的既有集成演示。单目米制尺度与跨帧一致性尚未解决，当前只用于定性观察，不能据此判断米制检测精度。
+              </p>
+              <a
+                href="https://github.com/AYANE225/Auto-Driver/blob/main/tools/run_vggt_demo.py"
+                >查看前端实现 ↗</a
+              >
+            </div>
+          </article>
         </div>
       </section>
       <section class="section wrap" id="run">
@@ -849,7 +1366,8 @@ python tools/run_demo.py --frames 60 --detector lidar --tracker imm \
             href="assets/highway.mp4"
             >下载高速视频</a
           >，或<a href="benchmarks/forecasting/metrics.json">读取完整预测报告</a
-          >。逐帧查看器和配置生成器需要 JavaScript。
+          >。三维点云、逐帧查看器、交互图表、匹配演示和配置生成器需要
+          JavaScript。
         </p></noscript
       >
     </main>

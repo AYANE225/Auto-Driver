@@ -21,6 +21,15 @@ A reusable Python + C++ core takes sensor frames through **detection → camera 
 | **6.86×** faster urban pipeline with 0.2 m voxel clustering | **800** CARLA sensor frames, plus six towns of actor trajectories | ROS 2 replay, timestamped TF, Docker, CPU tests and CI |
 | 888.5 → 129.5 ms mean; recall 0.2248 → 0.2231 | **92,751** held-out forecast windows; moving actors reported separately | HOTA / IDF1 checked against TrackEval |
 
+[![Interactive 3D point cloud and synchronized camera](docs/assets/pointcloud_preview.jpg)](https://ayane225.github.io/Auto-Driver/#pointcloud)
+
+Explore [3D recorded point clouds](https://ayane225.github.io/Auto-Driver/#pointcloud)
+with up to 20,000 display points per sampled frame, [stage timings](https://ayane225.github.io/Auto-Driver/#latency-lab),
+[adjustable association examples](https://ayane225.github.io/Auto-Driver/#association-lab),
+and [KITTI / VGGT videos](https://ayane225.github.io/Auto-Driver/#gallery).
+Point samples are quantized at 2 mm for display only; tracking overlays retain the
+previous configuration. The association examples are educational matrices, separate from measured results.
+
 ## Watch the system
 
 <table>

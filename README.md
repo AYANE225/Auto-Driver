@@ -10,12 +10,14 @@
 
 [**打开中文交互展示页 ↗**](https://ayane225.github.io/Auto-Driver/) · [快速开始](#快速开始) · [中文工程说明](docs/engineering_zh.md) · [评估协议](docs/benchmarks/README.md) · [English](README.en.md)
 
-<table>
-<tr>
-<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#explorer"><img src="docs/assets/urban_poster.jpg" alt="城市相机与鸟瞰跟踪回放"/></a><br><b>城市 · Town10HD_Opt</b><br>混合交通与行人 · <a href="docs/screenshots/demo_carla_urban.gif">查看 GIF</a></td>
-<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#explorer"><img src="docs/assets/highway_poster.jpg" alt="高速相机与鸟瞰跟踪回放"/></a><br><b>高速 · Town04_Opt</b><br>车辆交通 · <a href="docs/screenshots/demo_carla_highway.gif">查看 GIF</a></td>
-</tr>
-</table>
+[![可旋转的三维点云与同帧相机画面](docs/assets/pointcloud_preview.jpg)](https://ayane225.github.io/Auto-Driver/#pointcloud)
+
+<p align="center"><b>转动 3D 场景 · 拆开每帧耗时 · 调整匹配阈值 · 查看实车实验</b><br />
+<a href="https://ayane225.github.io/Auto-Driver/#pointcloud">进入 3D 点云</a> ·
+<a href="https://ayane225.github.io/Auto-Driver/#latency-lab">耗时拆解</a> ·
+<a href="https://ayane225.github.io/Auto-Driver/#association-lab">匹配演示</a> ·
+<a href="https://ayane225.github.io/Auto-Driver/#gallery">实验视频</a></p>
+
 
 项目使用独立 Python + C++ 核心完成 **检测 → 相机确认 → 世界坐标系跟踪 → 运动预测**。CARLA、KITTI 和合成场景读取器提供统一输入，ROS 2 节点复用同一套算法。当前范围是感知与预测，不包含路径规划和车辆控制。
 
@@ -28,6 +30,10 @@
 
 [展示页](https://ayane225.github.io/Auto-Driver/) 提供以下功能，无需安装仿真器：
 
+- **3D 点云：** 城市、高速共 42 个时刻，切换斜视/俯视/前视，拖动旋转、环绕观察、缩放与 PNG 下载。每帧最多 20,000 个显示点，支持轻量模式和键盘操作；相机画面与点云同步更新。
+- **耗时拆解：** 从实测 JSON 绘制四阶段堆叠条形图；切换场景、选择阶段，看清时间主要花在哪里。
+- **匹配演示：** 调整 IoU 阈值，比较分配前后过滤的结果；另一个示例说明最大总 IoU 与最大匹配数量的差别。
+- **实验视频展区：** 直接播放 KITTI 实车记录和公开 VGGT 前端的已有演示，注明各自评估范围。
 - **双场景视频回放：** 原始相机画面与鸟瞰跟踪图同步显示，支持播放、暂停与跳转。
 - **逐帧查看器：** 连续处理每个场景全部 400 帧后，导出 42 个采样时刻。拖动时间轴，切换点云、真值、跟踪、历史及预测图层；选择目标 ID 查看速度、尺寸和未更新帧数。
 - **点云交互：** 缩放、拖动画布，保存当前 PNG，下载当前帧 JSON。每帧最多显示 2,500 个抽样点，检测与评估仍使用原始输入。
@@ -35,7 +41,23 @@
 - **预测对照：** 按测试城镇和移动对象筛选总体指标；查看 24 个固定规则抽取的预测示例，与实际未来轨迹逐点对照，切换模型曲线并保存图像。
 - **运行命令生成：** 选择数据源、检测器、跟踪模型、设备和体素设置，生成可复制命令；不支持的组合会禁用。
 
-浏览器读取实际运行导出的数据，不在线执行感知模型。CARLA 是模拟器记录；KITTI 是独立的真实道路数据实验。24 秒视频沿用原始点聚类运行，逐帧查看器使用 0.2 m 体素配置，二者不是同一次计时实验，且均保留 C++ 改动前的跟踪配置。
+<table>
+<tr><td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#latency-lab"><img src="docs/assets/stage_preview.jpg" alt="检测、相机确认、跟踪与预测的实测耗时拆解" /></a><br /><b>耗时拆解</b> · 相同尺度查看 C++ 改动前后</td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#association-lab"><img src="docs/assets/association_preview.jpg" alt="调节阈值观察两种匹配策略" /></a><br /><b>关联算法演示</b> · 可调参数与明确的优化目标</td></tr>
+</table>
+
+<details><summary>展开城市与高速的相机 / BEV 视频预览</summary>
+
+<table>
+<tr>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#explorer"><img src="docs/assets/urban_poster.jpg" alt="城市相机与鸟瞰跟踪回放"/></a><br><b>城市 · Town10HD_Opt</b><br>混合交通与行人 · <a href="docs/screenshots/demo_carla_urban.gif">查看 GIF</a></td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#explorer"><img src="docs/assets/highway_poster.jpg" alt="高速相机与鸟瞰跟踪回放"/></a><br><b>高速 · Town04_Opt</b><br>车辆交通 · <a href="docs/screenshots/demo_carla_highway.gif">查看 GIF</a></td>
+</tr>
+</table>
+
+</details>
+
+浏览器读取实际运行导出的数据，不在线执行感知模型。CARLA 是模拟器记录；KITTI 是独立的真实道路数据实验。3D 显示点独立从对应原始帧抽样，量化步长 2 mm；教学匹配矩阵不计入实验指标。24 秒视频沿用原始点聚类运行，逐帧查看器使用 0.2 m 体素配置，二者不是同一次计时实验，且均保留 C++ 改动前的跟踪配置。
 
 ## C++ 跟踪加速与算法验证
 

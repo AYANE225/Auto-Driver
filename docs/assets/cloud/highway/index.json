@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "dataset": "highway",
+  "coordinates": "lidar: x forward, y left, z up; metres",
+  "dtype": "int16_le_xyz",
+  "scale_m": 0.002,
+  "point_limit": 20000,
+  "bounds_m": [
+    [
+      -55,
+      55
+    ],
+    [
+      -45,
+      45
+    ],
+    [
+      -3,
+      4
+    ]
+  ],
+  "replay_manifest_sha256": "47072df7047fed4418f403438b894ead6c4701aee5e9ff52bd0811f74c68b303",
+  "frames": [
+    {
+      "frame_id": 0,
+      "timestamp_s": 22.257304112426937,
+      "file": "000000.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "a9d36e485211debab45fb5fe54eab3e4e8d0ad54c162da9b15701bb57de1d994",
+      "sha256": "b05b198a6350db0b5a2923582c38ec06f238f59a9332b9b9cfd5091fdb71a82c"
+    },
+    {
+      "frame_id": 20,
+      "timestamp_s": 24.25730414222926,
+      "file": "000020.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "a7e544aa611753e7b95240cf3a60c28b0aed93eb77a48240f36a13920a76f2ec",
+      "sha256": "ed668610bdd124db0bf03e4e31fdbb612d6a129633473ad87f6f5cd79c448f2d"
+    },
+    {
+      "frame_id": 40,
+      "timestamp_s": 26.25730417203158,
+      "file": "000040.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "51d37acf26485f2cdef14b23a1d47f6820692982c3bb101d59e8f316f6399170",
+      "sha256": "302d7a4cce8ef58d20f39d72148c7251e017b04fa030722c14adeb842784ae26"
+    },
+    {
+      "frame_id": 60,
+      "timestamp_s": 28.257304201833904,
+      "file": "000060.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "c3544ddf7acfed95619e4de5a49328725f9d67460f50c2009181e135dc7632ac",
+      "sha256": "255bf823de8b658e310897af3fed3b064db20762a630a91abd79b50fb0f804d6"
+    },
+    {
+      "frame_id": 80,
+      "timestamp_s": 30.257304231636226,
+      "file": "000080.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "d77cfa7232b974bdabf4d242426db02d6b48510db6efb3c9c1fb4eaba6157443",
+      "sha256": "250174007c1247c55f7b11fe67649fb91d1db3d53125413bb46d922fd63bf6b8"
+    },
+    {
+      "frame_id": 100,
+      "timestamp_s": 32.25730426143855,
+      "file": "000100.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "7126fa29e235795b4533f19e29b155d0bc1d514e7b67f01183945170e32ad98a",
+      "sha256": "36d3089d7134e62bdb92c305fe5d01d4378688e9462e3301e8228af23babbe4b"
+    },
+    {
+      "frame_id": 120,
+      "timestamp_s": 34.25730429124087,
+      "file": "000120.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "bb07e1ed731e7e2e54d7f94638d646a9774be2b9d3578a55a4233eee4d093ded",
+      "sha256": "2e2e852625da2afee829b37896d546928be7f232e6889702371dd1e4ee3e5645"
+    },
+    {
+      "frame_id": 140,
+      "timestamp_s": 36.25730432104319,
+      "file": "000140.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "6d44350a75bdb1072cf6b98a8864a53645da31e9c813913f5b27874c7adb6b23",
+      "sha256": "eb1fde557ecefde377640abca4743180a1c57f10827c1809f8cf00a3e7101534"
+    },
+    {
+      "frame_id": 160,
+      "timestamp_s": 38.257304350845516,
+      "file": "000160.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "ff86968210d938efe18966a8b05981edbc7aad2e098e30e39f086355fa217d35",
+      "sha256": "07dc4e60d91f355bd013d3c3f3d23f7530aadfe257e2f4beaf0e6839f1f8192a"
+    },
+    {
+      "frame_id": 180,
+      "timestamp_s": 40.25730438064784,
+      "file": "000180.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "8d33e2480e8c64e5e2211f09742e9a5820ebd7102d082460654ffdeab67587fa",
+      "sha256": "c7fda19e3dc319c6eef0fa7f10fa145649f5c511033603923bc43539bd66a9b7"
+    },
+    {
+      "frame_id": 200,
+      "timestamp_s": 42.25730441045016,
+      "file": "000200.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "77b398fdaf9b4c9d98644ae3f02ea508fce61bdcadf61976fb31ae860bcbe014",
+      "sha256": "4752755c5505b28cbb578fb96eae351a23c2a29ba4ad58777778e2cddc0dbf57"
+    },
+    {
+      "frame_id": 220,
+      "timestamp_s": 44.25730444025248,
+      "file": "000220.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "1ae065e12459677fa5977263414d5e1db687344e443460757d32b1beaa4fc80e",
+      "sha256": "7280fcf36301afcb33ed1377cd5eaae46c06e9239aade6ebda5b7059fb33a303"
+    },
+    {
+      "frame_id": 240,
+      "timestamp_s": 46.257304470054805,
+      "file": "000240.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "23d160e4300fbe35b955d519a8b2d0ed265edd392befe8538e4c1137c422c267",
+      "sha256": "05df4da6080cd025b494e3a4165b118a4a879a842bb60a4c22a9f8d025fb77fc"
+    },
+    {
+      "frame_id": 260,
+      "timestamp_s": 48.25730449985713,
+      "file": "000260.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "36d045943d5ab9fb7e2829b4bca0fb804c38107e25aff14b8e8a43322db958fd",
+      "sha256": "ec056734e04209cc9c2e0e4ca0ff3f7fdb8d44d67495a78479c352fd7ff7a4b6"
+    },
+    {
+      "frame_id": 280,
+      "timestamp_s": 50.25730452965945,
+      "file": "000280.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "3a903499ed2ea5a7eee1dfb023d0eb8a234d5ba19e6f1f93997b59c670ca076a",
+      "sha256": "15bbf42c6343a60b1567f94f62c7d47451e4384c27b1759f4bdebf7e1ae8f848"
+    },
+    {
+      "frame_id": 300,
+      "timestamp_s": 52.25730455946177,
+      "file": "000300.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "e5104fe41f4cf29fcaff360ff5fa99f4495cbecf2a3158b942e820ed7efeab05",
+      "sha256": "4a1416df14ff13cdfaa9c19b6c0c050c4582d60413b13b01cbbc016b0fdc1d24"
+    },
+    {
+      "frame_id": 320,
+      "timestamp_s": 54.257304589264095,
+      "file": "000320.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "2599dc210ba1652c1b68b9b23dd391837893adcbd86f65265e91470b360d112b",
+      "sha256": "9d5bd9d261be0294298d37a886bb6f2198c6d995b658319bc62cc42d2d0707cb"
+    },
+    {
+      "frame_id": 340,
+      "timestamp_s": 56.25730461906642,
+      "file": "000340.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "ed139b28b5b6d08fd20da0ba4b57b752ced4d2ef399e9792c0080a12c652dcad",
+      "sha256": "87f422e603668187e74f57b5e4ededd079c730dbf317d15d74363c04d77d5e9b"
+    },
+    {
+      "frame_id": 360,
+      "timestamp_s": 58.25730464886874,
+      "file": "000360.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "466799470f44168f58fc5d91a9bc014f2303cd99c3692da92688bb5d455521d5",
+      "sha256": "89dc7f488e43f37320a017245cd25006c97685b75582b30a3a1f65a9c9aea84c"
+    },
+    {
+      "frame_id": 380,
+      "timestamp_s": 60.25730467867106,
+      "file": "000380.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "544e4cc2f06f4ec8c32f17251fc4930e05282634a8947fc3cd65170c56d2f8be",
+      "sha256": "53f43ac2d408ba756543a1643cf9ce40043ed6e4e67fe38cb71bd65defb92a93"
+    },
+    {
+      "frame_id": 399,
+      "timestamp_s": 62.15730470698327,
+      "file": "000399.bin",
+      "points": 20000,
+      "bytes": 120000,
+      "source_sha256": "970cfd9979ec8cfc2c33367204317534b82e8ac9fd8598a133cf8ff9a9b3d18e",
+      "sha256": "865d0b3d3d5b92b11106d8ad7dd0c458978fc39b9471ec91db716d3f6d0cd5d0"
+    }
+  ]
+}
