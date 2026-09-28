@@ -230,7 +230,7 @@ class Frame:
     timestamp: float
     frame_id: int = 0
     lidar: Optional[np.ndarray] = None  # (N, >=3) x, y, z[, intensity] in LiDAR frame
-    images: Dict[str, np.ndarray] = field(default_factory=dict)  # cam -> HxWx3 uint8
+    images: Dict[str, np.ndarray] = field(default_factory=dict)  # cam -> HxWx3 RGB uint8
     calib: Optional[SensorCalibration] = None
     ego_pose: Optional[np.ndarray] = None  # 4x4 world <- ego(lidar) transform
     ground_truth: Optional[List[Detection]] = None
@@ -249,6 +249,5 @@ class PerceptionOutput:
     detections: List[Detection] = field(default_factory=list)
     tracks: List[Track] = field(default_factory=list)
     predictions: List[PredictedObject] = field(default_factory=list)
-
 
 

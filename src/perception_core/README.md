@@ -24,11 +24,20 @@ for frame in generate_frames(make_default_scene(), num_frames=40):
 | Detection  | `GroundTruthDetector` (replay, for tests/CI/demo)  | –                   |
 | Detection  | `YoloCameraDetector` (optional 2D camera)          | ultralytics *(opt)* |
 | Fusion     | `LateFusion` (project 3D→image, IoU label transfer)| –                   |
-| Tracking   | `MultiObjectTracker` (const-velocity KF + Hungarian) | scipy             |
+| Tracking   | `MultiObjectTracker` (CV KF or IMM CV/CT + Hungarian; optional Mahalanobis gating) | scipy |
 | Prediction | `MotionPredictor` (CV / CTRV, multi-modal)         | –                   |
+| Evaluation | CLEAR-MOT, HOTA, IDF1, ADE/FDE                    | numpy / scipy       |
+| Data       | `CarlaDataset`, `KittiRawReader`, synthetic scenes | numpy              |
+| Rendering  | Camera overlays and BEV with shared track colors  | pillow / matplotlib *(opt)* |
 
 All detectors implement the same `Detector` interface, so backends are
 swappable without touching the pipeline.
+
+`Frame.images` stores RGB images. LiDAR detections are transformed into world
+coordinates using `Frame.ego_pose` before tracking. CARLA and KITTI ground truth
+carry stable IDs in `Detection.attributes['gt_id']`; pass these IDs to tracking,
+HOTA and identity evaluators when objects enter or leave the scene. Camera and
+BEV rendering use `common.ego_frame` helpers to transform copies of output state.
 
 ## Tests
 

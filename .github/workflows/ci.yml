@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install ruff
-      - run: ruff check src/perception_core
+      - run: ruff check --config src/perception_core/pyproject.toml src carla tools
 
   smoke:
     name: end-to-end smoke demo (headless)

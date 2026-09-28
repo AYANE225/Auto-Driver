@@ -16,6 +16,7 @@
   <depend>visualization_msgs</depend>
   <depend>vision_msgs</depend>
   <depend>sensor_msgs_py</depend>
+  <depend>tf2_ros_py</depend>
   <depend>av_perception_msgs</depend>
 
   <!-- perception_core is a plain pip package (no ROS index entry). -->

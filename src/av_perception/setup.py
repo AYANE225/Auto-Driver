@@ -20,6 +20,7 @@ setup(
         "console_scripts": [
             "perception_node = av_perception.perception_node:main",
             "synthetic_publisher = av_perception.synthetic_publisher_node:main",
+            "carla_replay = av_perception.carla_replay_node:main",
         ],
     },
 )

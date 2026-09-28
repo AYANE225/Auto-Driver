@@ -7,6 +7,12 @@ forecasting benchmarks (ADE / FDE / minADE / minFDE / miss-rate).
 """
 
 from perception_core.eval.metrics import MotMetrics, evaluate_tracking
+from perception_core.eval.association import (
+    HotaMetrics,
+    IdentityMetrics,
+    evaluate_hota,
+    evaluate_identity,
+)
 from perception_core.eval.prediction_metrics import (
     PredictionMetrics,
     PredictionSample,
@@ -16,6 +22,10 @@ from perception_core.eval.prediction_metrics import (
 __all__ = [
     "MotMetrics",
     "evaluate_tracking",
+    "HotaMetrics",
+    "IdentityMetrics",
+    "evaluate_hota",
+    "evaluate_identity",
     "PredictionMetrics",
     "PredictionSample",
     "evaluate_prediction",

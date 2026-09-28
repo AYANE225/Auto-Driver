@@ -13,24 +13,22 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from copy import copy
 from typing import List
 
 import numpy as np
 
 from perception_core.common.geometry import invert_se3, transform_box
+from perception_core.common.ego_frame import (
+    detections_to_frame as _detections_to_local,
+    output_to_frame as _output_to_local,
+)
 from perception_core.common.types import (
-    Detection,
     ObjectClass,
-    PerceptionOutput,
-    Trajectory,
-    TrajectoryPoint,
 )
 from perception_core.detection.lidar_cluster import LidarClusterConfig
 from perception_core.detection.mock import GroundTruthDetector
-from perception_core.eval.metrics import evaluate_tracking
+from perception_core.eval import evaluate_tracking, evaluate_hota, evaluate_identity
 from perception_core.fusion.late_fusion import (
-    LateFusion,
     LateFusionConfig,
     project_box_to_image,
 )
@@ -71,42 +69,6 @@ def kitti_pipeline(detector: str, gate_iou: float = 0.1) -> PerceptionPipeline:
         yolo = YoloCameraDetector(YoloConfig(conf=0.25, keep=_VEHICLE_CLASSES))
         return PerceptionPipeline(camera_detector=yolo, config=cfg)
     return PerceptionPipeline(config=cfg)
-
-
-def _detections_to_local(dets: List[Detection], T: np.ndarray) -> List[Detection]:
-    return [
-        Detection(box=transform_box(d.box, T), score=d.score, label=d.label,
-                  source=d.source, attributes=d.attributes)
-        for d in dets
-    ]
-
-
-def _output_to_local(out: PerceptionOutput, T: np.ndarray) -> PerceptionOutput:
-    """Express world-frame tracks/forecasts in the current ego frame for display."""
-    R = T[:3, :3]
-    tracks = []
-    for tr in out.tracks:
-        t2 = copy(tr)
-        t2.box = transform_box(tr.box, T)
-        t2.velocity = R[:2, :2] @ np.asarray(tr.velocity, dtype=float)
-        if tr.history:
-            h = np.array([[p[0], p[1], 0.0] for p in tr.history])
-            t2.history = [row[:2] for row in (h @ R.T + T[:3, 3])]
-        tracks.append(t2)
-    preds = []
-    for p in out.predictions:
-        p2 = copy(p)
-        p2.current_box = transform_box(p.current_box, T)
-        p2.trajectories = []
-        for traj in p.trajectories:
-            pts = []
-            for tp in traj.points:
-                q = R @ np.array([tp.x, tp.y, 0.0]) + T[:3, 3]
-                pts.append(TrajectoryPoint(t=tp.t, x=float(q[0]), y=float(q[1])))
-            p2.trajectories.append(Trajectory(points=pts, confidence=traj.confidence, mode=traj.mode))
-        preds.append(p2)
-    return PerceptionOutput(timestamp=out.timestamp, frame_id=out.frame_id,
-                            detections=[], tracks=tracks, predictions=preds)
 
 
 def _fov_mask(boxes, ego: np.ndarray, calib, cam: str = "cam2") -> List[bool]:
@@ -200,7 +162,9 @@ def main() -> None:
                                 gt_id_frames=gt_id_frames)
     report = {"dataset": "kitti_raw", "date": args.date, "drive": args.drive,
               "detector": args.detector, "fov_eval": fov_eval,
-              "frames": n, **metrics.as_dict()}
+              "frames": n, **metrics.as_dict(),
+              "hota": evaluate_hota(gt_frames, track_frames, gt_id_frames).as_dict(),
+              "identity": evaluate_identity(gt_frames, track_frames, gt_id_frames).as_dict()}
     print("=== KITTI tracking metrics (real data) ===")
     for k, v in report.items():
         print(f"  {k:12s}: {v}")

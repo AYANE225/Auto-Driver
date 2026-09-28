@@ -7,9 +7,10 @@ about +z.
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
+from scipy.spatial.transform import Rotation
 from builtin_interfaces.msg import Time as TimeMsg
 from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
 from sensor_msgs.msg import PointCloud2, PointField
@@ -25,19 +26,20 @@ from av_perception_msgs.msg import (
     TrackedObjectArray,
 )
 from perception_core.common.types import PerceptionOutput, Track
-
-# Distinct colours cycled by track id (mirrors perception_core.viz.bev palette).
-_PALETTE = [
-    (0.90, 0.10, 0.29), (0.24, 0.71, 0.29), (0.26, 0.39, 0.85),
-    (0.96, 0.51, 0.19), (0.57, 0.12, 0.71), (0.26, 0.83, 0.96),
-    (0.94, 0.20, 0.90), (0.75, 0.94, 0.27), (0.98, 0.75, 0.83),
-    (0.27, 0.60, 0.56), (0.86, 0.75, 1.00), (0.60, 0.39, 0.14),
-]
-
+from perception_core.viz.palette import track_color_rgb
 
 def _color(track_id: int, alpha: float = 1.0) -> ColorRGBA:
-    r, g, b = _PALETTE[track_id % len(_PALETTE)]
+    r, g, b = np.asarray(track_color_rgb(track_id), dtype=float) / 255.0
     return ColorRGBA(r=float(r), g=float(g), b=float(b), a=float(alpha))
+
+
+def transform_to_matrix(transform) -> np.ndarray:
+    """Convert geometry_msgs/Transform (target <- source) to a 4x4 matrix."""
+    q, t = transform.rotation, transform.translation
+    matrix = np.eye(4)
+    matrix[:3, :3] = Rotation.from_quat([q.x, q.y, q.z, q.w]).as_matrix()
+    matrix[:3, 3] = [t.x, t.y, t.z]
+    return matrix
 
 
 def yaw_to_quaternion(yaw: float) -> Quaternion:

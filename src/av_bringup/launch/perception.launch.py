@@ -8,9 +8,10 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, LaunchConfigurationEquals
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -22,12 +23,26 @@ def generate_launch_description() -> LaunchDescription:
                                      description="launch RViz2 with the perception layout")
     params_arg = DeclareLaunchArgument("params_file", default_value=default_params,
                                        description="parameter YAML for perception_node")
+    source_arg = DeclareLaunchArgument("source", default_value="synthetic",
+                                       choices=["synthetic", "carla"])
+    dataset_arg = DeclareLaunchArgument("dataset", default_value="",
+                                        description="CARLA recording directory for source:=carla")
+    rate_arg = DeclareLaunchArgument("replay_rate", default_value="2.0",
+                                     description="CARLA playback Hz; sensor timestamps are preserved")
 
     params_file = LaunchConfiguration("params_file")
 
     synthetic = Node(
         package="av_perception", executable="synthetic_publisher",
         name="synthetic_publisher", output="screen", parameters=[params_file],
+        condition=LaunchConfigurationEquals("source", "synthetic"),
+    )
+    replay = Node(
+        package="av_perception", executable="carla_replay", name="carla_replay",
+        output="screen", parameters=[params_file, {
+            "dataset": LaunchConfiguration("dataset"),
+            "rate": ParameterValue(LaunchConfiguration("replay_rate"), value_type=float),
+        }], condition=LaunchConfigurationEquals("source", "carla"),
     )
     perception = Node(
         package="av_perception", executable="perception_node",
@@ -39,4 +54,5 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(LaunchConfiguration("rviz")),
     )
 
-    return LaunchDescription([rviz_arg, params_arg, synthetic, perception, rviz])
+    return LaunchDescription([rviz_arg, params_arg, source_arg, dataset_arg, rate_arg,
+                              synthetic, replay, perception, rviz])

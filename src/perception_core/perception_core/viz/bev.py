@@ -6,7 +6,7 @@ by ID, with velocity arrows and history trails) and predicted trajectories.
 """
 from __future__ import annotations
 
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 import matplotlib
 
@@ -16,15 +16,7 @@ import numpy as np  # noqa: E402
 from matplotlib.patches import Polygon as MplPolygon  # noqa: E402
 
 from perception_core.common.types import Frame, PerceptionOutput  # noqa: E402
-
-_TRACK_PALETTE = [
-    "#e6194B", "#3cb44b", "#4363d8", "#f58231", "#911eb4", "#42d4f4",
-    "#f032e6", "#bfef45", "#fabed4", "#469990", "#dcbeff", "#9A6324",
-]
-
-
-def _track_color(track_id: int) -> str:
-    return _TRACK_PALETTE[track_id % len(_TRACK_PALETTE)]
+from perception_core.viz.palette import track_color_hex as _track_color  # noqa: E402
 
 
 class BevRenderer:
@@ -36,7 +28,8 @@ class BevRenderer:
     ) -> None:
         self.xlim, self.ylim = xlim, ylim
         self.fig, self.ax = plt.subplots(figsize=figsize)
-        self.fig.tight_layout()
+        self.fig.patch.set_facecolor("#101418")
+        self.fig.subplots_adjust(left=0.10, right=0.98, bottom=0.10, top=0.91)
 
     def draw(
         self,
@@ -45,16 +38,24 @@ class BevRenderer:
         show_lidar: bool = True,
         show_gt: bool = True,
         max_points: int = 6000,
+        all_modes: bool = False,
+        camera_fov: Optional[float] = None,
+        title: Optional[str] = None,
     ) -> np.ndarray:
+        """Render one frame. ``all_modes`` also draws the non-best forecast modes
+        (fainter); ``camera_fov`` (degrees) outlines a forward camera's frustum."""
         ax = self.ax
         ax.clear()
         ax.set_facecolor("#101418")
+        ax.tick_params(colors="#bac5d1", labelsize=8)
+        for spine in ax.spines.values():
+            spine.set_color("#39434f")
         ax.set_xlim(*self.xlim)
         ax.set_ylim(*self.ylim)
         ax.set_aspect("equal")
         ax.grid(color="#2a2f36", linewidth=0.5)
-        ax.set_xlabel("x [m] (forward)")
-        ax.set_ylabel("y [m] (left)")
+        ax.set_xlabel("x [m] (forward)", color="#bac5d1")
+        ax.set_ylabel("y [m] (left)", color="#bac5d1")
 
         if show_lidar and frame.lidar is not None and len(frame.lidar):
             pts = frame.lidar
@@ -62,6 +63,13 @@ class BevRenderer:
                 idx = np.random.default_rng(0).choice(len(pts), max_points, replace=False)
                 pts = pts[idx]
             ax.scatter(pts[:, 0], pts[:, 1], s=0.4, c="#5a6473", alpha=0.6, linewidths=0)
+
+        if camera_fov is not None:
+            reach = max(abs(v) for v in (*self.xlim, *self.ylim)) * 1.5
+            half = np.radians(camera_fov) / 2.0
+            for s in (-1.0, 1.0):
+                ax.plot([0, reach * np.cos(half)], [0, s * reach * np.sin(half)],
+                        color="#8b949e", linewidth=0.8, linestyle="-.", alpha=0.6)
 
         # ego vehicle marker at the origin
         ax.plot(0, 0, marker="^", color="white", markersize=10, zorder=5)
@@ -75,15 +83,21 @@ class BevRenderer:
             self._draw_track(ax, tr)
 
         for pred in output.predictions:
-            traj = pred.best
-            if traj is None or not traj.points:
-                continue
-            xy = traj.as_array()
-            xy = np.vstack([[pred.current_box.x, pred.current_box.y], xy])
-            ax.plot(xy[:, 0], xy[:, 1], ":", color=_track_color(pred.track_id), linewidth=1.6, alpha=0.9)
+            best = pred.best
+            modes = pred.trajectories if all_modes else ([best] if best is not None else [])
+            color = _track_color(pred.track_id)
+            for traj in modes:
+                if not traj.points:
+                    continue
+                xy = np.vstack([[pred.current_box.x, pred.current_box.y], traj.as_array()])
+                if traj is best:
+                    ax.plot(xy[:, 0], xy[:, 1], ":", color=color, linewidth=1.6, alpha=0.9)
+                else:
+                    ax.plot(xy[:, 0], xy[:, 1], "-", color=color, linewidth=0.8,
+                            alpha=0.25 + 0.5 * traj.confidence)
 
-        ax.set_title(f"t = {output.timestamp:5.2f} s   |   tracks: {len(output.tracks)}",
-                     color="white")
+        label = f"t = {output.timestamp:5.2f} s   |   tracks: {len(output.tracks)}"
+        ax.set_title(f"{title}\n{label}" if title else label, color="white", fontsize=10)
         self.fig.canvas.draw()
         img = np.asarray(self.fig.canvas.buffer_rgba())[:, :, :3].copy()
         return img

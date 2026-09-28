@@ -11,6 +11,54 @@ fed by **CARLA** simulation data. The emphasis is *engineering & systems
 integration*: a clean, framework-agnostic core, swappable detector backends,
 unit tests, CI, and a one-command visual demo.
 
+## CARLA camera + LiDAR demos
+
+Recorded with CARLA **0.9.16**, replayed through LiDAR clustering → YOLO camera
+confirmation → IMM tracking → CV/CTRV motion forecasts. Matching colors identify
+the same track in the camera and bird's-eye views; labels show track ID and speed.
+
+**Urban — Town10HD_Opt**
+
+![CARLA urban camera and BEV tracking](docs/screenshots/demo_carla_urban.gif)
+
+**Highway — Town04_Opt**
+
+![CARLA highway camera and BEV tracking](docs/screenshots/demo_carla_highway.gif)
+
+Each GIF contains 120 rendered frames at 5 fps (24 seconds), sampled every second
+sensor frame. Tracking and evaluation process **all 400 frames** per scenario at
+the recorded 0.1 s interval. The GIF playback rate is independent of processing speed.
+
+| Scenario | Precision | Recall | MOTA | HOTA | IDF1 | Pipeline mean / p95 |
+|----------|-----------|--------|------|------|------|---------------------|
+| Urban | 0.5566 | 0.2248 | 0.0449 | 0.1833 | 0.1716 | 780 / 1278 ms |
+| Highway | 0.2637 | 0.2391 | −0.4286 | 0.2010 | 0.0586 | 291 / 593 ms |
+
+These are project evaluations using class-agnostic BEV IoU: MOTA at IoU 0.3,
+IDF1 at 0.5, and HOTA averaged over 0.05:0.05:0.95. GT and tracks use the same
+LiDAR XY region and front-camera FOV; occluded GT remains included. Actor IDs
+from the recording are preserved across frames. This is not an official benchmark.
+The geometric detector still misses objects and produces false positives, and
+the current full pipeline does **not** meet the 10 Hz recording rate. Latency
+excludes five warmup frames, data loading, evaluation and rendering; YOLO ran on
+an RTX 5090. Full configurations and measurements:
+[urban report](docs/screenshots/metrics_carla_urban.json),
+[highway report](docs/screenshots/metrics_carla_highway.json).
+
+```bash
+pip install -e 'src/perception_core[yolo,viz]'
+# Repeat with highway in place of urban for the second recording.
+python carla/replay_demo.py --dataset carla/data/urban --detector fusion \
+    --tracker imm --device cuda:0 --fov-eval --render-every 2 --gif-frames 120 \
+    --gif docs/screenshots/demo_carla_urban.gif \
+    --report docs/screenshots/metrics_carla_urban.json
+```
+
+Recordings and model weights are excluded from Git; see
+[CARLA setup and recording](carla/README.md) to collect a scenario.
+
+## Synthetic demos
+
 <p align="center">
   <img src="docs/screenshots/demo_lidar.gif" width="640" alt="Bird's-eye-view perception demo"/>
 </p>
@@ -31,14 +79,14 @@ unit tests, CI, and a one-command visual demo.
 
 - **Full AV perception stack** — detection → sensor fusion → multi-object
   tracking → motion prediction, from raw sensor sweeps to ROS 2 topics.
-- **Framework-agnostic core** — pure NumPy / SciPy / scikit-learn, so **75 unit
-  tests** run torch-free on CPU in seconds under **GitHub Actions CI** (py3.9–3.11).
+- **Framework-agnostic core** — NumPy / SciPy / scikit-learn, with CPU tests
+  under **GitHub Actions CI** (py3.9–3.11), including CARLA replay and camera projection.
 - **Swappable detector backends** — classical LiDAR clustering, a YOLO
   camera-LiDAR fusion gate, a public-VGGT camera-only front-end, and GT replay,
   all behind one `Detector` interface.
-- **Proven on real data** — the *same* pipeline runs unchanged on KITTI raw; the
-  YOLO fusion gate cuts false positives **97 %** and lifts precision **10×**.
-- **Honest, measured evaluation** — CLEAR-MOT, ADE / FDE, and a per-stage latency
+- **Real-data validation** — the same pipeline runs on KITTI raw; on drive 0014,
+  the YOLO fusion gate cuts false positives **91 %** and lifts precision **6.8×**.
+- **Measured evaluation** — CLEAR-MOT, HOTA, IDF1, ADE / FDE, and a per-stage latency
   benchmark wired into CI as a real-time budget gate. No cherry-picked numbers.
 
 ## Architecture
@@ -62,8 +110,8 @@ vehicle moves.
   interface; the pipeline never changes.
 - **Fail-safe fusion.** Camera-LiDAR fusion degrades gracefully to LiDAR-only
   when no calibrated camera is present.
-- **Honest evaluation.** Built-in CLEAR-MOT metrics (MOTA / MOTP / ID-switches /
-  precision / recall) and prediction metrics (ADE / FDE / minADE / minFDE /
+- **Evaluation.** Built-in CLEAR-MOT metrics (MOTA / MOTP / ID-switches /
+  precision / recall), HOTA, IDF1 and prediction metrics (ADE / FDE / minADE / minFDE /
   miss-rate) so results are measured, not asserted — plus a latency benchmark
   with an optional real-time budget gate wired into CI.
 
@@ -150,17 +198,18 @@ detector rescuing precision on real data. Scored inside the camera frustum
 | Detector (camera FOV)          | Precision | Recall | False positives | MOTA   |
 |--------------------------------|-----------|--------|-----------------|--------|
 | Classical LiDAR only           | 0.051     | 0.251  | 5198            | −4.40  |
-| **+ YOLO camera-LiDAR gate**   | **0.533** | 0.181  | **177**         | **+0.02** |
+| **+ YOLO camera-LiDAR gate**   | **0.3495** | 0.2254 | **469**        | **−0.195** |
 
 <p align="center">
   <img src="docs/screenshots/kitti_fusion_gate.png" width="620" alt="Precision and total false positives: classical LiDAR vs. YOLO camera-LiDAR gate on KITTI drive 0014"/>
 </p>
 
-The camera gate cuts false positives by **97 %** and lifts precision **10×**,
-flipping MOTA positive. Recall drops — the gate can only *reject*, never add, and
-is capped by the geometric clusterer's own recall. That ceiling is precisely why
-production stacks reach for a learned 3D detector; the pluggable `Detector`
-interface exists so one drops straight in.
+The camera gate cuts false positives by **91 %** and lifts precision **6.8×**.
+Recall remains limited by geometric clustering and drops after camera filtering;
+MOTA remains negative. These results were rerun after correcting the RGB-to-BGR
+conversion at the Ultralytics NumPy interface. The fusion run also reports
+HOTA **0.1828** and IDF1 **0.1979**; see the
+[full report](docs/screenshots/metrics_kitti_fusion.json).
 
 Reproduce:
 
@@ -224,7 +273,7 @@ python tools/run_vggt_demo.py --images path/to/frames --tracker imm \
 | Fusion     | `LateFusion` — project 3D→image, 2D-IoU label transfer    | –                   |
 | Tracking   | `MultiObjectTracker` — CV Kalman **or** IMM (CV+CT) + Hungarian, optional Mahalanobis gating | scipy |
 | Prediction | `MotionPredictor` — CV / CTRV, multi-modal                | –                   |
-| Evaluation | CLEAR-MOT · ADE/FDE prediction metrics · latency benchmark | numpy              |
+| Evaluation | CLEAR-MOT · HOTA · IDF1 · ADE/FDE · latency benchmark | numpy / scipy      |
 
 ## Repository layout
 
@@ -235,12 +284,14 @@ carla_av_perception/
 ├── src/av_perception_msgs/  # ROS 2 custom interfaces (tracked / predicted objects)
 ├── src/av_perception/       # ROS 2 rclpy nodes wrapping perception_core
 ├── src/av_bringup/          # ROS 2 launch files, params, RViz config
+├── carla/                   # scenario / trajectory recording and camera + BEV replay
 ├── tools/run_demo.py        # offline end-to-end demo + BEV GIF + metrics (--tracker cv|imm)
 ├── tools/run_kitti_demo.py  # same pipeline on real KITTI raw + honest CLEAR-MOT
 ├── tools/benchmark.py       # per-stage latency / throughput + optional real-time budget gate
 ├── tools/eval_prediction.py # ADE/FDE prediction accuracy on an analytic manoeuvre bank
 ├── tools/run_vggt_demo.py   # optional camera-only demo: public VGGT pseudo-LiDAR → pipeline
 ├── tools/make_docs_figures.py # regenerate the README architecture + results figures
+├── tools/check_ros_replay.py # verify recorded LiDAR + TF -> tracks / predictions
 ├── Dockerfile               # framework-agnostic core image (tests / demo / benchmarks)
 ├── docker/Dockerfile.ros2   # ROS 2 Humble workspace image (colcon build + launch)
 ├── Makefile                 # make test · lint · demo · bench · figures · docker-*
@@ -252,10 +303,10 @@ carla_av_perception/
 
 | Layer | Description | Status |
 |-------|-------------|--------|
-| `perception_core` | Detection (LiDAR · YOLO fusion · VGGT camera front-end) / tracking (CV + IMM) / prediction + ADE/FDE & latency benchmarks + 75 unit tests | ✅ done |
-| Offline demo + CI | BEV renderer, GIF, CLEAR-MOT report, latency budget gate, GitHub Actions | ✅ done |
-| ROS 2 layer | Custom msgs, rclpy nodes, launch + RViz visualization | ✅ done |
-| CARLA layer | Sensor bridge, NPC traffic, record → replay dataset | ✅ done |
+| `perception_core` | Detection (LiDAR · YOLO fusion · VGGT camera front-end), CV + IMM tracking, CV/CTRV prediction, CPU tests | ✅ implemented |
+| Offline demo + CI | Camera + BEV GIFs, CLEAR-MOT / HOTA / IDF1, latency budget gate | ✅ verified |
+| ROS 2 layer | Custom msgs, timestamped TF, CARLA / synthetic source, launch + RViz | ✅ replay smoke passed |
+| CARLA layer | Sensor and actor-trajectory recorders, core dataset reader | ✅ recorded and replayed |
 | Real-data (KITTI) | `KittiRawReader`, GT-replay tracking, YOLO camera-LiDAR fusion gate | ✅ done |
 
 ## Quickstart
@@ -304,21 +355,33 @@ source install/setup.bash
 
 # Launch: synthetic LiDAR publisher + perception node + RViz (no CARLA needed)
 ros2 launch av_bringup perception.launch.py            # add rviz:=false for headless
+
+# Recorded CARLA LiDAR + timestamped world <- LiDAR TF (no server needed)
+ros2 launch av_bringup perception.launch.py source:=carla \
+    dataset:=/absolute/path/to/carla/data/highway replay_rate:=2.0 rviz:=false
+
+# Check message delivery, output frame and sensor timestamp intervals
+python tools/check_ros_replay.py --dataset carla/data/highway --frames 8
 ```
 
 The graph publishes `~/tracks` (`TrackedObjectArray`), `~/predictions`
 (`PredictedObjectArray`) and `~/markers` (`MarkerArray` for RViz). Point the
-`perception_node` at a real source by remapping `/lidar/points`.
+`perception_node` at a real source by remapping `/lidar/points` and providing TF
+from its sensor frame into `map`. The ROS path currently uses LiDAR clustering
+with IMM tracking; the camera fusion demos above run through the offline script.
 
 ### Feed it CARLA data
 
 ```bash
 # See carla/README.md — record a scenario from a CARLA server, then either
-# replay it offline through the same pipeline ...
-python carla/replay_demo.py --dataset carla/data/urban --gif docs/screenshots/demo_carla.gif
-# ... or republish it into the ROS 2 graph as /lidar/points.
+# replay it offline through the same pipeline.
+python carla/replay_demo.py --dataset carla/data/urban --detector fusion \
+    --tracker imm --fov-eval --gif docs/screenshots/demo_carla_urban.gif
 ```
 
+The trajectory recorder also writes actor states across multiple towns for
+future forecasting experiments. The current predictor uses CV/CTRV motion
+models; learned forecasting training is not implemented.
 
 ## Tech stack
 
@@ -329,4 +392,3 @@ Optional: ultralytics (YOLO), VGGT (torch, camera→pseudo-LiDAR), Open3D.
 ## License
 
 MIT — see [LICENSE](LICENSE).
-

@@ -8,7 +8,9 @@ Pure matplotlib (no project imports), dark theme matched to the BEV demos:
 from __future__ import annotations
 
 import argparse
+import json
 import os
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -100,7 +102,7 @@ def architecture(out_path: str) -> None:
                                 linewidth=1.4, edgecolor="#2ea043", facecolor="#0f1b12", zorder=1))
     ax.text(65, 9.6, "Engineering rigor", ha="center", va="center", color="#3fb950",
             fontsize=10.5, fontweight="bold")
-    ax.text(65, 6.0, "CLEAR-MOT  ·  ADE / FDE  ·  latency budget gate  ·  75 unit tests  ·  GitHub Actions CI (py3.9–3.11)",
+    ax.text(65, 6.0, "CLEAR-MOT / HOTA / IDF1  ·  ADE / FDE  ·  latency budget gate  ·  CPU tests  ·  GitHub Actions CI",
             ha="center", va="center", color=MUT, fontsize=8.8, family="monospace")
 
     fig.tight_layout(pad=0.6)
@@ -109,8 +111,12 @@ def architecture(out_path: str) -> None:
     print(f"wrote {out_path}")
 
 
-def fusion_gate(out_path: str) -> None:
+def fusion_gate(out_path: str, metrics_dir: Path) -> None:
     """Before/after of the YOLO camera-LiDAR gate on real KITTI clutter."""
+    reports = [json.loads((metrics_dir / name).read_text()) for name in
+               ("metrics_kitti_lidar_fov.json", "metrics_kitti_fusion.json")]
+    precision = [report["precision"] for report in reports]
+    false_positives = [report["fp"] for report in reports]
     labels = ["Classical\nLiDAR only", "+ YOLO\ncamera gate"]
     colors = ["#5a6473", "#4cc9f0"]
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(9, 4.2), dpi=150)
@@ -126,21 +132,24 @@ def fusion_gate(out_path: str) -> None:
         ax.grid(axis="y", color="#21262d", linewidth=0.8)
         ax.set_axisbelow(True)
 
-    b1 = a1.bar(labels, [0.051, 0.533], color=colors, width=0.62, zorder=3)
+    b1 = a1.bar(labels, precision, color=colors, width=0.62, zorder=3)
     a1.set_title("Precision", color=FG, fontsize=11)
     a1.set_ylim(0, 0.62)
-    for r, v in zip(b1, [0.051, 0.533]):
-        a1.text(r.get_x() + r.get_width() / 2, v + 0.015, f"{v:.3f}", ha="center",
+    for r, v in zip(b1, precision):
+        a1.text(r.get_x() + r.get_width() / 2, v + 0.015, f"{v:.4f}", ha="center",
                 color=FG, fontsize=10, fontweight="bold")
-    a1.annotate("×10", xy=(0.5, 0.42), color="#4cc9f0", fontsize=16, fontweight="bold", ha="center")
+    a1.annotate(f"×{precision[1] / precision[0]:.1f}", xy=(0.5, 0.48),
+                color="#4cc9f0", fontsize=16, fontweight="bold", ha="center")
 
-    b2 = a2.bar(labels, [5198, 177], color=colors, width=0.62, zorder=3)
+    b2 = a2.bar(labels, false_positives, color=colors, width=0.62, zorder=3)
     a2.set_title("False positives (total)", color=FG, fontsize=11)
-    a2.set_ylim(0, 5900)
-    for r, v in zip(b2, [5198, 177]):
+    a2.set_ylim(0, max(false_positives) * 1.15)
+    for r, v in zip(b2, false_positives):
         a2.text(r.get_x() + r.get_width() / 2, v + 130, f"{v}", ha="center",
                 color=FG, fontsize=10, fontweight="bold")
-    a2.annotate("−97%", xy=(1, 2600), color="#4cc9f0", fontsize=16, fontweight="bold", ha="center")
+    reduction = 1 - false_positives[1] / false_positives[0]
+    a2.annotate(f"−{reduction:.0%}", xy=(1, max(false_positives) / 2),
+                color="#4cc9f0", fontsize=16, fontweight="bold", ha="center")
 
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     fig.savefig(out_path, facecolor=BG, bbox_inches="tight", pad_inches=0.15)
@@ -151,10 +160,11 @@ def fusion_gate(out_path: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="docs/screenshots")
+    ap.add_argument("--metrics-dir", type=Path, default=Path("docs/screenshots"))
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     architecture(os.path.join(args.out, "architecture.png"))
-    fusion_gate(os.path.join(args.out, "kitti_fusion_gate.png"))
+    fusion_gate(os.path.join(args.out, "kitti_fusion_gate.png"), args.metrics_dir)
 
 
 if __name__ == "__main__":

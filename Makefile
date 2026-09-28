@@ -6,7 +6,7 @@ CORE := src/perception_core
 
 .DEFAULT_GOAL := help
 .PHONY: help install install-dev test cov lint typecheck \
-        demo demo-imm kitti bench predict figures \
+        demo demo-imm carla-demo kitti bench predict figures \
         docker-core docker-ros clean
 
 help:  ## Show this help
@@ -26,8 +26,8 @@ cov:  ## Run the unit tests with a coverage report
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PY) -m pytest -q $(CORE)/tests \
 	  --cov=perception_core --cov-report=term-missing
 
-lint:  ## Lint the core with ruff (pinned rule set)
-	ruff check $(CORE)
+lint:  ## Lint Python sources, CARLA scripts and tools
+	ruff check --config $(CORE)/pyproject.toml src carla tools
 
 typecheck:  ## Static type-check the core with mypy
 	mypy $(CORE)/perception_core
@@ -39,6 +39,12 @@ demo:  ## Offline BEV demo (LiDAR detector) -> GIF + metrics
 demo-imm:  ## Offline demo with the IMM (CV+CT) tracker bank
 	$(PY) tools/run_demo.py --frames 80 --detector lidar --tracker imm \
 	  --gif docs/screenshots/demo_imm.gif --report metrics_imm.json
+
+carla-demo:  ## CARLA urban camera + BEV replay (needs recordings and YOLO)
+	$(PY) carla/replay_demo.py --dataset carla/data/urban --detector fusion \
+	  --tracker imm --fov-eval --render-every 2 --gif-frames 120 \
+	  --gif docs/screenshots/demo_carla_urban.gif \
+	  --report docs/screenshots/metrics_carla_urban.json
 
 kitti:  ## Real KITTI-raw GT-replay demo (needs data/kitti)
 	$(PY) tools/run_kitti_demo.py --root data/kitti --drive 14 --detector gt \

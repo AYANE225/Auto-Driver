@@ -14,7 +14,7 @@ import json
 import os
 
 from perception_core.detection.mock import GroundTruthDetector
-from perception_core.eval.metrics import evaluate_tracking
+from perception_core.eval import evaluate_tracking, evaluate_hota, evaluate_identity
 from perception_core.io.synthetic import generate_frames, make_default_scene
 from perception_core.pipeline import PerceptionPipeline, PipelineConfig
 from perception_core.tracking.mot import TrackerConfig
@@ -59,7 +59,9 @@ def main() -> None:
 
     metrics = evaluate_tracking(gt_frames, track_frames, iou_threshold=0.3)
     report = {"detector": args.detector, "tracker": args.tracker,
-              "frames": args.frames, "dt": args.dt, **metrics.as_dict()}
+              "frames": args.frames, "dt": args.dt, **metrics.as_dict(),
+              "hota": evaluate_hota(gt_frames, track_frames).as_dict(),
+              "identity": evaluate_identity(gt_frames, track_frames).as_dict()}
     print("=== tracking metrics ===")
     for k, v in report.items():
         print(f"  {k:12s}: {v}")

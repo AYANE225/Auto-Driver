@@ -73,7 +73,8 @@ class YoloCameraDetector:
 
     def _detect_image(self, image: np.ndarray, cam: str) -> List[Detection2D]:
         results = self._model.predict(
-            image, conf=self.cfg.conf, iou=self.cfg.iou,
+            # Frame images are RGB; Ultralytics' NumPy input convention is BGR.
+            np.ascontiguousarray(image[:, :, ::-1]), conf=self.cfg.conf, iou=self.cfg.iou,
             device=self.cfg.device or None, imgsz=self.cfg.imgsz,
             verbose=self.cfg.verbose,
         )

@@ -8,6 +8,8 @@ perception_node:
     dbscan_eps: 0.8
     ground_dist_thresh: 0.2
     tracker:
+      motion_model: "imm"
+      gating: false
       iou_threshold: 0.1
       min_hits: 3
       max_age: 5

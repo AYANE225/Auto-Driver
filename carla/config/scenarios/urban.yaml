@@ -1,10 +1,14 @@
-# Dense urban scenario: many vehicles + pedestrians in a compact town.
-town: Town03
+# Dense urban scenario: many vehicles + pedestrians in CARLA's photoreal town.
+town: Town10HD_Opt
+# Parked-car props are static meshes with no ground-truth label; unloading them
+# keeps every car in the scene a labelled actor, so the evaluation is fair.
+unload_layers: [ParkedVehicles]
 dt: 0.1
 num_frames: 400
-warmup_frames: 30
-num_vehicles: 60
-num_walkers: 30
+warmup_frames: 50
+num_vehicles: 70
+num_walkers: 60
+walker_cross_factor: 0.2
 weather: ClearNoon
 seed: 2024
 ego: vehicle.tesla.model3
@@ -15,6 +19,8 @@ lidar:
   points_per_second: 1200000
   upper_fov: 10.0
   lower_fov: -30.0
+  dropoff_general_rate: 0.2
+  noise_stddev: 0.01
   z: 1.8
 
 cameras:
