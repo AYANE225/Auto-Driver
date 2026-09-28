@@ -2,7 +2,7 @@
 
 [中文说明](README.md) · [Chinese interactive website](https://ayane225.github.io/Auto-Driver/)
 
-**Camera + LiDAR perception, multi-object tracking and motion forecasting — with CARLA replay and ROS 2 integration.**
+**Camera + LiDAR perception, tracking, forecasting, motion planning and vehicle control, with CARLA validation.**
 
 [![CI](https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml/badge.svg)](https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.9–3.11-3776AB)
@@ -31,6 +31,8 @@ Point samples are quantized at 2 mm for display only; tracking overlays retain t
 previous configuration. The association examples are educational matrices, separate from measured results.
 
 ## Closed-loop planning and control
+
+The viewer supports interpolated or recorded-sample playback, an ego-following view, zoom, frame stepping, event navigation, PNG export and clickable speed / acceleration / steering plots. CARLA camera videos retain their original 5 Hz sampling, with synchronized speed, throttle and brake readings.
 
 [![Motion planning and vehicle feedback](docs/assets/driving_preview.jpg)](https://ayane225.github.io/Auto-Driver/#driving)
 

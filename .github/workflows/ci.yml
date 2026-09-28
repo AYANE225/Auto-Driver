@@ -23,7 +23,7 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/website-tests/node_modules
           WEBSITE_SCREENSHOTS: ${{ runner.temp }}/website-screenshots
         run: |
-          python -m http.server 8765 --bind 127.0.0.1 --directory docs > "$RUNNER_TEMP/website-server.log" 2>&1 &
+          python tools/serve_website.py > "$RUNNER_TEMP/website-server.log" 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           for attempt in $(seq 1 30); do
@@ -32,6 +32,7 @@ jobs:
           done
           node tools/test_website.cjs
           node tools/test_showcase.cjs
+          node tools/test_driving_replay.cjs
           node tools/test_driving.cjs
       - uses: actions/upload-artifact@v4
         if: always()

@@ -100,6 +100,97 @@ async function main() {
     await page.locator("#driving-scene").selectOption("obstacle");
     await ready("gt", "obstacle");
     await seek(25);
+    // Interpolation must visibly advance between recorded 0.2 s samples.
+    await page.locator("#driving-rate").selectOption("0.5");
+    await page.locator("#driving-play").click();
+    const motion = await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const samples = [],
+            start = performance.now();
+          function tick(time) {
+            const c = document.getElementById("driving-canvas");
+            samples.push({
+              t: Number(c.dataset.renderTime),
+              x: Number(c.dataset.egoX),
+              frame: Number(c.dataset.frame),
+              image: c.toDataURL(),
+            });
+            if (time - start < 800) requestAnimationFrame(tick);
+            else resolve(samples);
+          }
+          requestAnimationFrame(tick);
+        }),
+    );
+    await page.locator("#driving-play").click();
+    assert.ok(
+      new Set(motion.map((s) => s.image)).size > 8,
+      "visible motion between source frames",
+    );
+    assert.ok(
+      new Set(motion.map((s) => s.x)).size >
+        new Set(motion.map((s) => s.frame)).size * 2,
+    );
+    const frames = reports["gt/obstacle"].frames;
+    for (const s of motion) {
+      const a = frames[s.frame],
+        b = frames[Math.min(s.frame + 1, frames.length - 1)];
+      const u = (s.t - a.time_s) / (b.time_s - a.time_s);
+      assert.ok(Math.abs(s.x - (a.ego.x + (b.ego.x - a.ego.x) * u)) < 1e-6);
+    }
+    const stoppedTime = Number(
+      await page.locator("#driving-canvas").getAttribute("data-render-time"),
+    );
+    await page.locator("#driving-play").click();
+    await page.waitForFunction(
+      (t) =>
+        Number(document.getElementById("driving-canvas").dataset.renderTime) >
+        t + 0.05,
+      stoppedTime,
+    );
+    await page.locator("#driving-play").click();
+    await seek(25);
+    await page.locator("#driving-smooth").uncheck();
+    await page.locator("#driving-play").click();
+    await page.waitForFunction(
+      () =>
+        Number(document.getElementById("driving-canvas").dataset.renderTime) >
+        5.05,
+    );
+    await page.locator("#driving-play").click();
+    const rawIndex = Number(await page.locator("#driving-time").inputValue());
+    assert.equal(
+      Number(await page.locator("#driving-canvas").getAttribute("data-ego-x")),
+      frames[rawIndex].ego.x,
+    );
+    await page.locator("#driving-smooth").check();
+    await page.locator("#driving-rate").selectOption("1");
+    await seek(25);
+    const overview = await pixels();
+    await page.locator("#driving-view-mode").selectOption("follow");
+    assert.notEqual(await pixels(), overview);
+    await page.locator("#driving-view-mode").selectOption("overview");
+    await page.locator("#driving-next").click();
+    assert.equal(await page.locator("#driving-time").inputValue(), "26");
+    await page.locator("#driving-previous").click();
+    assert.equal(await page.locator("#driving-time").inputValue(), "25");
+    for (const kind of ["acceleration", "steering", "speed"]) {
+      await page.locator("#driving-chart").selectOption(kind);
+      assert.equal(
+        await page.locator("#driving-speed-chart").getAttribute("data-series"),
+        kind,
+      );
+    }
+    await page
+      .locator("#driving-speed-chart")
+      .click({ position: { x: 36, y: 60 } });
+    assert.equal(await page.locator("#driving-time").inputValue(), "0");
+    await seek(25);
+    const saved = page.waitForEvent("download");
+    await page.locator("#driving-save").click();
+    assert.match((await saved).suggestedFilename(), /^obstacle-gt-5.00s\.png$/);
+    assert.equal(await page.locator("#driving-candidates").isChecked(), false);
+    await page.locator("#driving-candidates").check();
     const before = await pixels();
     await page.locator("#driving-candidates").uncheck();
     assert.notEqual(await pixels(), before);
@@ -134,7 +225,13 @@ async function main() {
       (f) => f.status === "emergency_stop",
     );
     assert.ok(emergency >= 0);
-    await seek(emergency);
+    await page
+      .locator(`#driving-events button[data-index="${emergency}"]`)
+      .click();
+    assert.equal(
+      Number(await page.locator("#driving-time").inputValue()),
+      emergency,
+    );
     assert.match(
       await page.locator("#driving-status").textContent(),
       /紧急制动/,
@@ -168,6 +265,29 @@ async function main() {
         ) < 0.1,
       );
       await video.evaluate((v) => v.pause());
+      for (const time of [report.video.duration_s * 0.7, 1.0, 0.05]) {
+        await video.evaluate((v, t) => {
+          v.currentTime = t;
+        }, time);
+        const sample = report.frames.findLastIndex(
+          (f) => f.video_time_s <= time + 1e-5,
+        );
+        const panel = page.locator(`#driving-carla-${mode}-telemetry`);
+        await page.waitForFunction(
+          ({ mode, sample }) =>
+            document.getElementById(`driving-carla-${mode}-telemetry`).dataset
+              .frame === String(sample),
+          { mode, sample },
+        );
+        assert.equal(
+          await panel.locator('[data-value="speed"]').textContent(),
+          `${report.frames[sample].ego.speed.toFixed(2)} m/s`,
+        );
+        assert.equal(
+          await panel.locator('[data-value="brake"]').textContent(),
+          `${(report.frames[sample].command.brake * 100).toFixed(0)}%`,
+        );
+      }
     }
     await page.locator("#driving-scene").selectOption("obstacle");
     await ready("gt", "obstacle");
@@ -183,23 +303,13 @@ async function main() {
     }
     if (process.env.WEBSITE_SCREENSHOTS) {
       await fs.mkdir(process.env.WEBSITE_SCREENSHOTS, { recursive: true });
-      await page
-        .locator("#driving")
-        .screenshot({
-          path: path.join(
-            process.env.WEBSITE_SCREENSHOTS,
-            "driving-mobile.png",
-          ),
-        });
+      await page.locator("#driving").screenshot({
+        path: path.join(process.env.WEBSITE_SCREENSHOTS, "driving-mobile.png"),
+      });
       await page.setViewportSize({ width: 1440, height: 1000 });
-      await page
-        .locator("#driving")
-        .screenshot({
-          path: path.join(
-            process.env.WEBSITE_SCREENSHOTS,
-            "driving-desktop.png",
-          ),
-        });
+      await page.locator("#driving").screenshot({
+        path: path.join(process.env.WEBSITE_SCREENSHOTS, "driving-desktop.png"),
+      });
     }
     assert.deepEqual(errors, []);
     const failed = await context.newPage();

@@ -176,17 +176,125 @@
   position: relative;
   padding: 4px 22px 0;
 }
-.driving-speed-chart > span {
-  position: absolute;
-  top: 10px;
-  left: 32px;
+.driving-speed-chart > label,
+.driving-chart-hint {
   color: var(--muted);
   font-size: 10px;
+}
+.driving-speed-chart select {
+  margin: 8px;
+  max-width: 100%;
+  font-size: 12px;
+}
+.driving-chart-hint {
+  display: inline-block;
 }
 #driving-speed-chart {
   display: block;
   width: 100%;
-  height: 115px;
+  height: 125px;
+  cursor: crosshair;
+}
+.driving-view-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 22px;
+  border-top: 1px solid var(--line);
+}
+.driving-view-tools label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+#driving-zoom {
+  width: 90px;
+  accent-color: var(--green);
+}
+.driving-view-tools button,
+.driving-events button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--green);
+  border-radius: 4px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.driving-panel button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.driving-events {
+  padding: 0 22px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.driving-events > span {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+#driving-events {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+}
+.driving-events button {
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 11px;
+}
+.driving-events button[aria-pressed="true"] {
+  color: var(--green);
+  border-color: var(--green);
+}
+.driving-telemetry {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.driving-telemetry dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.driving-telemetry dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+.driving-telemetry dd {
+  margin: 6px 0 0;
+  font: 14px var(--mono);
+  color: var(--green);
+}
+.driving-telemetry p {
+  min-height: 22px;
+}
+@media (max-width: 600px) {
+  .driving-view-tools,
+  .driving-events {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .driving-playback {
+    gap: 10px;
+  }
+  #driving-time {
+    order: 2;
+    flex-basis: calc(100% - 75px);
+  }
+  #driving-time-label {
+    order: 3;
+  }
+  .driving-legend {
+    max-width: calc(100% - 32px);
+  }
 }
 .driving-metrics {
   display: grid;

@@ -29,6 +29,7 @@
     <script src="assets/tracking.js" defer></script>
     <script src="assets/explorers.js" defer></script>
     <script src="assets/showcase.js" defer></script>
+    <script src="assets/driving-replay.js" defer></script>
     <script src="assets/driving.js" defer></script>
   </head>
   <body>
@@ -156,8 +157,7 @@
               </select></label
             >
             <label
-              ><input type="checkbox" id="driving-candidates" checked />
-              候选轨迹</label
+              ><input type="checkbox" id="driving-candidates" /> 候选轨迹</label
             >
             <label><input type="checkbox" id="driving-tracks" /> 跟踪框</label>
             <a
@@ -166,6 +166,33 @@
               download
               >下载回放 JSON ↓</a
             >
+          </div>
+          <div class="driving-view-tools">
+            <label
+              >视角
+              <select id="driving-view-mode">
+                <option value="overview">全局路线</option>
+                <option value="follow">跟随车辆</option>
+              </select></label
+            >
+            <label
+              >缩放
+              <input
+                id="driving-zoom"
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value="1"
+                aria-label="驾驶视图缩放"
+            /></label>
+            <label
+              ><input id="driving-smooth" type="checkbox" checked />
+              平滑回放</label
+            >
+            <button id="driving-save" type="button" disabled>
+              保存画面 PNG
+            </button>
           </div>
           <div class="driving-view">
             <div class="driving-map">
@@ -226,6 +253,22 @@
             >
               播放驾驶
             </button>
+            <button
+              id="driving-previous"
+              type="button"
+              disabled
+              aria-label="上一驾驶采样帧"
+            >
+              ←
+            </button>
+            <button
+              id="driving-next"
+              type="button"
+              disabled
+              aria-label="下一驾驶采样帧"
+            >
+              →
+            </button>
             <input
               type="range"
               id="driving-time"
@@ -245,11 +288,22 @@
               </select></label
             >
           </div>
+          <div class="driving-events" aria-label="驾驶关键事件">
+            <span>跳到事件</span>
+            <div id="driving-events"></div>
+          </div>
           <div class="driving-speed-chart">
-            <span>实际速度 / m·s⁻¹</span
-            ><canvas
+            <label for="driving-chart">运行曲线</label>
+            <select id="driving-chart">
+              <option value="speed">实际速度 / m·s⁻¹</option>
+              <option value="acceleration">加速度指令 / m·s⁻²</option>
+              <option value="steering">转向指令 / °</option>
+            </select>
+            <span class="driving-chart-hint">点击曲线定位时刻</span>
+            <canvas
               id="driving-speed-chart"
               aria-label="当前运行的实际速度曲线与所选时刻"
+              tabindex="0"
             ></canvas>
           </div>
           <div id="driving-metrics" class="driving-metrics" aria-live="polite">
@@ -257,6 +311,7 @@
           </div>
         </div>
         <p class="fine-print">
+          平滑回放仅在相邻记录间插值车辆位姿；关闭后可检查原始采样。规划轨迹、控制指令、灯色和验收指标保持原始记录。
           车辆由 Python
           规划与控制代码闭环驱动，再导出记录供浏览器回放。真值基线绕过检测；合成
           LiDAR
@@ -317,6 +372,29 @@
                 Town10HD · 当前目标真值输入 ·
                 单车道路线。视频来自实际受控自车相机。
               </p>
+              <div
+                class="driving-telemetry"
+                id="driving-carla-gt-telemetry"
+                aria-label="与视频同步的车辆反馈"
+              >
+                <span class="small">相机采样 5 Hz · 原始时序</span>
+                <dl>
+                  <div>
+                    <dt>实际速度</dt>
+                    <dd data-value="speed">—</dd>
+                  </div>
+                  <div>
+                    <dt>油门</dt>
+                    <dd data-value="throttle">—</dd>
+                  </div>
+                  <div>
+                    <dt>制动</dt>
+                    <dd data-value="brake">—</dd>
+                  </div>
+                </dl>
+                <p data-value="status">播放或拖动视频以查看同步控制记录。</p>
+                <p class="small" data-value="time">—</p>
+              </div>
               <a href="assets/driving/carla_gt.json">控制记录与评估 JSON ↗</a>
             </div>
           </article>
@@ -336,6 +414,29 @@
                 Town10HD · 实际 64 线 LiDAR 输入 ·
                 聚类、跟踪、预测、规划与制动闭环。
               </p>
+              <div
+                class="driving-telemetry"
+                id="driving-carla-lidar-telemetry"
+                aria-label="与视频同步的车辆反馈"
+              >
+                <span class="small">相机采样 5 Hz · 原始时序</span>
+                <dl>
+                  <div>
+                    <dt>实际速度</dt>
+                    <dd data-value="speed">—</dd>
+                  </div>
+                  <div>
+                    <dt>油门</dt>
+                    <dd data-value="throttle">—</dd>
+                  </div>
+                  <div>
+                    <dt>制动</dt>
+                    <dd data-value="brake">—</dd>
+                  </div>
+                </dl>
+                <p data-value="status">播放或拖动视频以查看同步控制记录。</p>
+                <p class="small" data-value="time">—</p>
+              </div>
               <a href="assets/driving/carla_lidar.json"
                 >控制记录与评估 JSON ↗</a
               >
@@ -497,7 +598,6 @@
             controls
             playsinline
             muted
-            loop
             preload="none"
             poster="assets/urban_poster.jpg"
             aria-label="城市 CARLA 相机与鸟瞰跟踪回放"
@@ -598,6 +698,10 @@
               →</button
             ><output id="frame-label" for="frame-slider">—</output>
           </div>
+          <p class="small">
+            此查看器每约 2
+            秒取一帧；连续查看按记录时间间隔切换，相机与点云同步更新。载入较慢时会等待数据。
+          </p>
           <div class="layer-controls" aria-label="显示图层">
             <label
               ><input type="checkbox" data-layer="points" checked /> 点云</label

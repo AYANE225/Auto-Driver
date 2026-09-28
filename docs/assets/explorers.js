@@ -76,6 +76,7 @@
     selected = "",
     request = 0,
     playing = false,
+    playSession = 0,
     timer = null,
     pan = [0, 0],
     scale = 1,
@@ -291,9 +292,25 @@
     }
   }
   function stop() {
+    playSession++;
+    // A paused or superseded playback request must not change the visible frame.
+    if (playing) request++;
     playing = false;
     clearTimeout(timer);
     byId("play-frames").textContent = "连续查看";
+  }
+  function scheduleNext() {
+    if (!playing || !manifest) return;
+    const current = manifest.frames[displayedIndex],
+      next = manifest.frames[displayedIndex + 1];
+    if (!next) {
+      stop();
+      return;
+    }
+    timer = setTimeout(
+      playNext,
+      Math.max(0, next.elapsed_s - current.elapsed_s) * 1000,
+    );
   }
   async function playNext() {
     if (!playing) return;
@@ -301,8 +318,10 @@
       stop();
       return;
     }
+    const session = playSession;
     const ok = await loadFrame(displayedIndex + 1);
-    if (ok && playing) timer = setTimeout(playNext, 1000);
+    if (session !== playSession) return;
+    if (ok && playing) scheduleNext();
     else stop();
   }
   async function loadScene() {
@@ -358,12 +377,17 @@
       return;
     }
     playing = true;
+    const session = ++playSession;
     byId("play-frames").textContent = "暂停查看";
     if (displayedIndex === manifest.frames.length - 1) {
       loadFrame(0).then((ok) => {
-        if (ok && playing) timer = setTimeout(playNext, 1000);
+        if (session !== playSession) return;
+        if (ok && playing) scheduleNext();
       });
-    } else playNext();
+    } else scheduleNext();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stop();
   });
   byId("track-select").addEventListener("change", () => {
     selected = byId("track-select").value;

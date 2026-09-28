@@ -42,8 +42,10 @@
     const w = target.clientWidth,
       h = target.clientHeight,
       dpr = Math.min(devicePixelRatio || 1, 2);
-    target.width = Math.round(w * dpr);
-    target.height = Math.round(h * dpr);
+    if (target.width !== Math.round(w * dpr))
+      target.width = Math.round(w * dpr);
+    if (target.height !== Math.round(h * dpr))
+      target.height = Math.round(h * dpr);
     const ctx = target.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     return { ctx, w, h };
@@ -52,20 +54,47 @@
     const { ctx, w, h } = context(canvas);
     ctx.fillStyle = "#0b1520";
     ctx.fillRect(0, 0, w, h);
-    if (!report) return;
+    if (!report) {
+      drawSpeed();
+      return;
+    }
+    canvas.parentElement.querySelector(".candidate").hidden =
+      !el("driving-candidates").checked;
     const frame = report.frames[index],
+      display = DrivingReplay.sample(
+        report.frames,
+        playTime,
+        el("driving-smooth").checked,
+      ),
+      ego = display.ego,
       path = report.reference_path;
+    canvas.dataset.renderTime = String(playTime);
+    canvas.dataset.egoX = String(ego.x);
+    canvas.dataset.egoY = String(ego.y);
+    canvas.dataset.egoYaw = String(ego.yaw);
     const xs = path.map((p) => p[0]),
       ys = path.map((p) => p[1]);
     const minX = Math.min(...xs) - 8,
       maxX = Math.max(...xs) + 8;
     const minY = Math.min(...ys) - report.road_half_width_m - 10,
       maxY = Math.max(...ys) + report.road_half_width_m + 10;
-    const scale = Math.min((w - 30) / (maxX - minX), (h - 135) / (maxY - minY));
+    const follow = el("driving-view-mode").value === "follow",
+      scale =
+        (follow
+          ? Math.min((w - 30) / 32, (h - 165) / 18)
+          : Math.min((w - 30) / (maxX - minX), (h - 165) / (maxY - minY))) *
+        Number(el("driving-zoom").value),
+      cx = follow ? ego.x : (minX + maxX) / 2,
+      cy = follow ? ego.y : (minY + maxY) / 2,
+      viewY = 105 + (h - 170) / 2;
     const project = ([x, y]) => [
-      w / 2 + (x - (minX + maxX) / 2) * scale,
-      h * 0.59 - (y - (minY + maxY) / 2) * scale,
+      w / 2 + (x - cx) * scale,
+      viewY - (y - cy) * scale,
     ];
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(12, 100, w - 24, h - 165);
+    ctx.clip();
     const line = (points, color, width = 1, dash = []) => {
       ctx.beginPath();
       points.forEach((p, i) => {
@@ -79,20 +108,24 @@
       ctx.stroke();
       ctx.setLineDash([]);
     };
-    for (let x = Math.ceil(minX / 10) * 10; x <= maxX; x += 10)
+    const left = cx - w / scale,
+      right = cx + w / scale,
+      bottom = cy - h / scale,
+      top = cy + h / scale;
+    for (let x = Math.ceil(left / 10) * 10; x <= right; x += 10)
       line(
         [
-          [x, minY],
-          [x, maxY],
+          [x, bottom],
+          [x, top],
         ],
         "#16232e",
         1,
       );
-    for (let y = Math.ceil(minY / 10) * 10; y <= maxY; y += 10)
+    for (let y = Math.ceil(bottom / 10) * 10; y <= top; y += 10)
       line(
         [
-          [minX, y],
-          [maxX, y],
+          [left, y],
+          [right, y],
         ],
         "#16232e",
         1,
@@ -153,7 +186,10 @@
       for (const candidate of frame.candidates)
         line(candidate.xy, candidate.feasible ? "#68879860" : "#c8886650", 1);
     line(
-      report.frames.slice(0, index + 1).map((f) => [f.ego.x, f.ego.y]),
+      [
+        ...report.frames.slice(0, index + 1).map((f) => [f.ego.x, f.ego.y]),
+        [ego.x, ego.y],
+      ],
       "#90e0b8",
       2.5,
     );
@@ -180,18 +216,49 @@
       );
       ctx.restore();
     };
-    for (const b of frame.obstacles)
+    for (const b of display.obstacles)
       box(b[0], b[1], b[6], b[3], b[4], "#df9b7c35", "#df9b7c");
     if (el("driving-tracks").checked)
       for (const b of frame.tracks)
         box(b[0], b[1], b[6], b[3], b[4], "transparent", "#91b8e3");
-    const ego = frame.ego,
-      v = report.vehicle;
+    const v = report.vehicle;
     const center = [
       ego.x + v.rear_to_center * Math.cos(ego.yaw),
       ego.y + v.rear_to_center * Math.sin(ego.yaw),
     ];
     box(...center, ego.yaw, v.length, v.width, "#90e0b8", "#b8f3d2");
+    // Roof, front windscreen, brake lamps and front-wheel steering cue.
+    const carPoint = (x, y) => [
+      ego.x + x * Math.cos(ego.yaw) - y * Math.sin(ego.yaw),
+      ego.y + x * Math.sin(ego.yaw) + y * Math.cos(ego.yaw),
+    ];
+    box(
+      ...carPoint(v.rear_to_center, 0),
+      ego.yaw,
+      v.length * 0.42,
+      v.width * 0.72,
+      "#244c47",
+      "#447469",
+    );
+    for (const side of [-1, 1]) {
+      for (const axle of [0, v.wheelbase])
+        box(
+          ...carPoint(axle, side * v.width * 0.48),
+          ego.yaw + (axle ? ego.steering : 0),
+          0.65,
+          0.22,
+          "#07121b",
+          "#728f95",
+        );
+      box(
+        ...carPoint(v.rear_to_center - v.length * 0.46, side * v.width * 0.32),
+        ego.yaw,
+        0.12,
+        0.35,
+        frame.command.acceleration < -0.3 ? "#ff796c" : "#ae625c",
+        "transparent",
+      );
+    }
     line(
       [
         center,
@@ -211,51 +278,75 @@
     ctx.fillStyle = "#a9bfcb";
     ctx.font = "10px sans-serif";
     ctx.fillText("终点", goal[0] - 12, goal[1] - 13);
-    const ruler = 10 * scale;
+    ctx.restore();
+    ctx.fillStyle = "#a9bfcb";
+    ctx.font = "10px sans-serif";
+    const rulerMeters = scale > 16 ? 5 : 10,
+      ruler = rulerMeters * scale;
     ctx.strokeStyle = "#688393";
     ctx.beginPath();
     ctx.moveTo(w - 25 - ruler, h - 50);
     ctx.lineTo(w - 25, h - 50);
     ctx.stroke();
-    ctx.fillText("10 m", w - 25 - ruler, h - 58);
+    ctx.fillText(`${rulerMeters} m`, w - 25 - ruler, h - 58);
     drawSpeed();
   }
   function drawSpeed() {
     const { ctx, w, h } = context(speedCanvas);
     ctx.clearRect(0, 0, w, h);
     if (!report) return;
-    const last = report.frames[report.frames.length - 1].time_s,
-      top = Math.max(4, ...report.frames.map((f) => f.ego.speed)) * 1.12;
-    const px = (t) => 30 + ((w - 45) * t) / Math.max(last, 0.1),
-      py = (v) => h - 20 - ((h - 47) * v) / top;
+    const kind = el("driving-chart").value,
+      values = report.frames.map((f) =>
+        kind === "speed"
+          ? f.ego.speed
+          : kind === "steering"
+            ? (f.command.steering * 180) / Math.PI
+            : f.command.acceleration,
+      ),
+      last = report.frames[report.frames.length - 1].time_s,
+      low = Math.min(0, ...values),
+      high = Math.max(kind === "speed" ? 4 : 1, ...values),
+      margin = (high - low) * 0.12,
+      px = (t) => 36 + ((w - 50) * t) / Math.max(last, 0.1),
+      py = (value) =>
+        h -
+        23 -
+        ((h - 37) * (value - low + margin)) / (high - low + 2 * margin);
     ctx.font = "10px sans-serif";
     ctx.fillStyle = "#8ba2b2";
-    for (let value = 0; value <= top; value += 2) {
+    for (let i = 0; i <= 4; i++) {
+      const value = low + ((high - low) * i) / 4;
       ctx.strokeStyle = "#293946";
       ctx.beginPath();
-      ctx.moveTo(28, py(value));
+      ctx.moveTo(34, py(value));
       ctx.lineTo(w - 12, py(value));
       ctx.stroke();
-      ctx.fillText(String(value), 8, py(value) + 3);
+      ctx.fillText(value.toFixed(1), 2, py(value) + 3);
     }
     ctx.beginPath();
     report.frames.forEach((f, i) => {
-      if (i) ctx.lineTo(px(f.time_s), py(f.ego.speed));
-      else ctx.moveTo(px(f.time_s), py(f.ego.speed));
+      if (!i) ctx.moveTo(px(f.time_s), py(values[i]));
+      else {
+        if (kind !== "speed") ctx.lineTo(px(f.time_s), py(values[i - 1]));
+        ctx.lineTo(px(f.time_s), py(values[i]));
+      }
     });
-    ctx.strokeStyle = "#90e0b8";
+    ctx.strokeStyle = {
+      speed: "#90e0b8",
+      acceleration: "#e5b493",
+      steering: "#91b8e3",
+    }[kind];
     ctx.lineWidth = 2;
     ctx.stroke();
-    const f = report.frames[index];
     ctx.strokeStyle = "#ead99a";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(px(f.time_s), 20);
-    ctx.lineTo(px(f.time_s), h - 20);
+    ctx.moveTo(px(playTime), 10);
+    ctx.lineTo(px(playTime), h - 20);
     ctx.stroke();
-    ctx.fillStyle = "#8ba2b2";
-    ctx.fillText("0 s", 28, h - 4);
+    ctx.fillText("0 s", 34, h - 4);
     ctx.fillText(`${last.toFixed(1)} s`, Math.max(40, w - 52), h - 4);
+    speedCanvas.dataset.series = kind;
   }
   function showFrame() {
     if (!report) return;
@@ -292,7 +383,16 @@
     if (!f.feasible)
       el("driving-rejections").textContent =
         "当前执行制动回退；不将回退轨迹标为可行解。";
-    el("driving-time-label").textContent = `${f.time_s.toFixed(1)} s`;
+    el("driving-time-label").textContent = `${playTime.toFixed(1)} s`;
+    el("driving-previous").disabled = index === 0;
+    el("driving-next").disabled = index === report.frames.length - 1;
+    const buttons = [...el("driving-events").querySelectorAll("button")];
+    const active = buttons
+      .filter((b) => Number(b.dataset.index) <= index)
+      .at(-1);
+    buttons.forEach((b) =>
+      b.setAttribute("aria-pressed", String(b === active)),
+    );
     draw();
   }
   function pause() {
@@ -306,16 +406,17 @@
     if (!playing || !report) return;
     if (lastTick)
       playTime +=
-        Math.min(0.15, (time - lastTick) / 1000) *
+        Math.max(0, (time - lastTick) / 1000) *
         Number(el("driving-rate").value);
     lastTick = time;
+    playTime = Math.min(playTime, report.frames.at(-1).time_s);
     const before = index;
-    while (
-      index < report.frames.length - 1 &&
-      report.frames[index + 1].time_s <= playTime
-    )
-      index++;
+    index = DrivingReplay.frameIndex(report.frames, playTime);
     if (index !== before) showFrame();
+    else {
+      el("driving-time-label").textContent = `${playTime.toFixed(1)} s`;
+      draw();
+    }
     if (index === report.frames.length - 1) {
       pause();
       return;
@@ -328,8 +429,10 @@
       return;
     }
     if (!report) return;
-    if (index === report.frames.length - 1) index = 0;
-    playTime = report.frames[index].time_s;
+    if (index === report.frames.length - 1) {
+      index = 0;
+      playTime = report.frames[0].time_s;
+    }
     lastTick = 0;
     playing = true;
     showFrame();
@@ -337,29 +440,66 @@
     el("driving-play").setAttribute("aria-pressed", "true");
     animation = requestAnimationFrame(tick);
   });
-  slider.addEventListener("input", () => {
+  function seek(value) {
+    if (!report) return;
     pause();
-    index = Number(slider.value);
+    index = Math.max(0, Math.min(report.frames.length - 1, value));
+    playTime = report.frames[index].time_s;
     showFrame();
+  }
+  slider.addEventListener("input", () => seek(Number(slider.value)));
+  el("driving-previous").addEventListener("click", () => seek(index - 1));
+  el("driving-next").addEventListener("click", () => seek(index + 1));
+  for (const id of [
+    "driving-view-mode",
+    "driving-zoom",
+    "driving-smooth",
+    "driving-chart",
+  ])
+    el(id).addEventListener("input", () => {
+      speedCanvas.setAttribute(
+        "aria-label",
+        el("driving-chart").selectedOptions[0].textContent +
+          "；点击或使用方向键定位时刻",
+      );
+      draw();
+    });
+  speedCanvas.addEventListener("click", (event) => {
+    if (!report) return;
+    const rect = speedCanvas.getBoundingClientRect();
+    const time =
+      Math.max(
+        0,
+        Math.min(1, (event.clientX - rect.left - 36) / (rect.width - 50)),
+      ) * report.frames.at(-1).time_s;
+    seek(DrivingReplay.frameIndex(report.frames, time));
+  });
+  el("driving-save").addEventListener("click", () => {
+    if (!report) return;
+    const a = document.createElement("a");
+    a.download = `${report.scenario}-${report.detector}-${playTime.toFixed(2)}s.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
   });
   for (const id of ["driving-candidates", "driving-tracks"])
     el(id).addEventListener("change", draw);
-  canvas.addEventListener("keydown", (event) => {
+  function keyboardSeek(event) {
     if (
       !report ||
       !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
     )
       return;
     event.preventDefault();
-    pause();
-    index =
+    seek(
       event.key === "Home"
         ? 0
         : event.key === "End"
           ? report.frames.length - 1
-          : index + (event.key === "ArrowRight" ? 1 : -1);
-    showFrame();
-  });
+          : index + (event.key === "ArrowRight" ? 1 : -1),
+    );
+  }
+  canvas.addEventListener("keydown", keyboardSeek);
+  speedCanvas.addEventListener("keydown", keyboardSeek);
   async function read(url) {
     if (!cache.has(url)) cache.set(url, await readReport(url));
     return cache.get(url);
@@ -375,6 +515,14 @@
     delete canvas.dataset.scene;
     delete canvas.dataset.input;
     delete canvas.dataset.frame;
+    for (const key of ["renderTime", "egoX", "egoY", "egoYaw"])
+      delete canvas.dataset[key];
+    for (const id of ["driving-save", "driving-previous", "driving-next"])
+      el(id).disabled = true;
+    el("driving-events").replaceChildren();
+    slider.value = "0";
+    slider.removeAttribute("aria-valuetext");
+    el("driving-time-label").textContent = "—";
     el("driving-status").textContent = "正在读取闭环运行记录…";
     for (const id of [
       "driving-speed",
@@ -397,6 +545,18 @@
       if (request !== token) return;
       report = data;
       index = 0;
+      playTime = report.frames[0].time_s;
+      el("driving-save").disabled = false;
+      el("driving-events").replaceChildren(
+        ...DrivingReplay.events(report.frames, statuses).map((event) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.index = String(event.index);
+          button.textContent = `${event.time.toFixed(1)} s · ${event.label}`;
+          button.addEventListener("click", () => seek(event.index));
+          return button;
+        }),
+      );
       slider.max = String(report.frames.length - 1);
       slider.disabled = false;
       el("driving-play").disabled = false;
@@ -487,3 +647,82 @@
   });
   new ResizeObserver(draw).observe(canvas);
 })();
+
+// Match actuator feedback to the camera sample actually presented by the video.
+for (const mode of ["gt", "lidar"]) {
+  const video = document.getElementById(`driving-carla-${mode}-video`),
+    panel = document.getElementById(`driving-carla-${mode}-telemetry`);
+  let report,
+    pending,
+    callback = 0;
+  const value = (name) => panel.querySelector(`[data-value="${name}"]`);
+  function show(time) {
+    if (!report) return;
+    // CARLA float32 timestamps differ slightly from encoded video PTS.
+    const index = DrivingReplay.frameIndex(
+        report.frames,
+        time,
+        "video_time_s",
+        1e-5,
+      ),
+      frame = report.frames[index];
+    panel.dataset.frame = String(index);
+    value("speed").textContent = `${frame.ego.speed.toFixed(2)} m/s`;
+    value("throttle").textContent =
+      `${(frame.command.throttle * 100).toFixed(0)}%`;
+    value("brake").textContent = `${(frame.command.brake * 100).toFixed(0)}%`;
+    value("status").textContent =
+      {
+        cruise: "沿车道行驶",
+        goal_approach: "减速接近终点",
+        goal_reached: "到达并停车",
+        yielding: "减速让行",
+        emergency_stop: "紧急制动",
+        stale_input: "观测超时制动",
+      }[frame.status] || frame.status;
+    value("time").textContent =
+      `记录 ${frame.time_s.toFixed(1)} s · 转向 ${((frame.command.steering * 180) / Math.PI).toFixed(1)}° · 路线进度 ${frame.route_s.toFixed(1)} m`;
+  }
+  async function load() {
+    if (report) return;
+    if (!pending)
+      pending = readReport(`assets/driving/carla_${mode}.json`)
+        .then((data) => {
+          report = data;
+          show(video.currentTime);
+        })
+        .catch(() => {
+          value("status").textContent =
+            "控制记录读取失败；再次播放或拖动视频可重试。";
+        })
+        .finally(() => {
+          pending = null;
+        });
+    await pending;
+  }
+  function next() {
+    if (callback || video.paused || !video.requestVideoFrameCallback) return;
+    callback = video.requestVideoFrameCallback((_, metadata) => {
+      callback = 0;
+      show(metadata.mediaTime);
+      next();
+    });
+  }
+  video.addEventListener("play", () => {
+    load();
+    next();
+  });
+  for (const name of ["loadeddata", "seeked"])
+    video.addEventListener(name, async () => {
+      await load();
+      show(video.currentTime);
+    });
+  video.addEventListener("timeupdate", () => {
+    if (!video.requestVideoFrameCallback) show(video.currentTime);
+  });
+  video.addEventListener("pause", () => {
+    if (callback) video.cancelVideoFrameCallback(callback);
+    callback = 0;
+    show(video.currentTime);
+  });
+}
