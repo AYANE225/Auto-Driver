@@ -6,7 +6,7 @@ CORE := src/perception_core
 
 .DEFAULT_GOAL := help
 .PHONY: help install install-dev test cov lint typecheck \
-        demo demo-imm carla-demo kitti bench predict figures \
+        demo demo-imm carla-demo kitti bench predict forecast figures showcase site \
         docker-core docker-ros clean
 
 help:  ## Show this help
@@ -58,6 +58,15 @@ predict:  ## ADE / FDE prediction accuracy on the analytic manoeuvre bank
 
 figures:  ## Regenerate the README architecture + results figures
 	$(PY) tools/make_docs_figures.py --out docs/screenshots
+
+forecast:  ## Evaluate forecasts on six recorded CARLA towns
+	$(PY) tools/eval_trajectories.py --out outputs/forecasting
+
+showcase:  ## Regenerate project-page figures and videos (requires ffmpeg)
+	$(PY) tools/make_showcase_assets.py --out outputs/showcase-assets --video
+
+site:  ## Serve the project page at http://localhost:8000
+	$(PY) -m http.server 8000 --directory docs
 
 docker-core:  ## Build the framework-agnostic core image
 	docker build -t auto-driver-core .

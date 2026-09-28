@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0c131b" />
+    <meta
+      name="description"
+      content="Auto-Driver: camera and LiDAR perception, multi-object tracking and motion forecasting. Explore CARLA replays, measured performance and a reusable ROS 2 core."
+    />
+    <meta
+      property="og:title"
+      content="Auto-Driver — From raw sensors to tracked motion"
+    />
+    <meta
+      property="og:description"
+      content="A working perception stack with CARLA replays, ROS 2 integration and reproducible evaluation."
+    />
+    <meta
+      property="og:image"
+      content="https://ayane225.github.io/Auto-Driver/assets/overview.jpg"
+    />
+    <title>Auto-Driver · Perception in motion</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2390e0b8'/%3E%3Cpath d='M14 48L32 14L50 48M22 34H42' fill='none' stroke='%230c131b' stroke-width='5'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="assets/site.css" />
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="brand" href="#" aria-label="Auto-Driver home"
+        ><span class="brand-mark" aria-hidden="true">A</span> AUTO-DRIVER<span
+          class="version"
+        >
+          / 01</span
+        ></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#demo">Replay</a><a href="#results">Results</a
+        ><a href="#system">System</a
+        ><a class="github" href="https://github.com/AYANE225/Auto-Driver"
+          >GitHub ↗</a
+        >
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero wrap">
+        <p class="eyebrow">
+          <span class="status-dot"></span> AUTONOMOUS-DRIVING PERCEPTION
+        </p>
+        <div class="hero-heading">
+          <h1>From raw sensors <br />to <em>tracked motion.</em></h1>
+          <p class="hero-note">
+            A working camera + LiDAR stack. <br />Detection, fusion, tracking
+            and forecasting — from recorded roads to ROS 2.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <a class="button primary" href="#demo"
+            >Explore the replay <span>↘</span></a
+          ><a
+            class="text-link"
+            href="https://github.com/AYANE225/Auto-Driver#quickstart"
+            >Run it locally ↗</a
+          ><span class="hero-stack">Python · CARLA · ROS 2 Humble</span>
+        </div>
+        <div class="stats">
+          <div>
+            <strong>6.86<span>×</span></strong>
+            <p>Faster urban replay pipeline</p>
+            <small>0.2 m voxel clustering · mean latency</small>
+          </div>
+          <div>
+            <strong>800</strong>
+            <p>Sensor frames evaluated</p>
+            <small>Urban + highway · 400 frames each</small>
+          </div>
+          <div>
+            <strong>6<span> towns</span></strong>
+            <p>Recorded trajectory evaluation</p>
+            <small>Separate training, validation and test towns</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="section wrap" id="demo">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">01 / SENSOR REPLAY</p>
+            <h2>One scene. Two perspectives.</h2>
+          </div>
+          <p>
+            Matching colors connect track identities <br />across the camera and
+            bird’s-eye view.
+          </p>
+        </div>
+        <div class="replay-shell">
+          <div class="replay-toolbar">
+            <div class="segmented" aria-label="Choose replay scene">
+              <button
+                type="button"
+                class="selected"
+                data-scene="urban"
+                aria-pressed="true"
+              >
+                Urban <span>Town10HD</span></button
+              ><button type="button" data-scene="highway" aria-pressed="false">
+                Highway <span>Town04</span>
+              </button>
+            </div>
+            <span class="replay-tag">RECORDED IN CARLA 0.9.16</span>
+          </div>
+          <video
+            id="replay"
+            controls
+            playsinline
+            muted
+            loop
+            preload="none"
+            poster="assets/urban_poster.jpg"
+            aria-label="Urban CARLA replay: camera view and bird's-eye tracking view"
+          >
+            <source src="assets/urban.mp4" type="video/mp4" />
+            Your browser cannot play this video.
+            <a href="assets/urban.mp4">Download the urban replay.</a>
+          </video>
+          <div class="replay-caption">
+            <span id="scene-caption">Urban / Town10HD_Opt</span
+            ><span
+              >24 s preview · camera + BEV ·
+              <a
+                id="gif-link"
+                href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/demo_carla_urban.gif"
+                >Original GIF ↗</a
+              ></span
+            >
+          </div>
+        </div>
+        <p class="fine-print">
+          The preview shows the original clustering run: 120 rendered frames at
+          5 fps. Each evaluation processes all 400 sensor frames at their
+          recorded timestamps. Playback speed does not represent processing
+          throughput.
+        </p>
+      </section>
+
+      <section class="section wrap" id="results">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">02 / MEASURED PERFORMANCE</p>
+            <h2>Profile. Improve. Measure again.</h2>
+          </div>
+          <p>
+            Same recordings, detector and tracker. <br />Change one clustering
+            parameter.
+          </p>
+        </div>
+        <div class="results-layout">
+          <div class="result-story">
+            <span class="number-label">0.2 m</span>
+            <h3>
+              Cluster voxel centroids. <br />Fit boxes to original points.
+            </h3>
+            <p>
+              Weighted DBSCAN uses the number of points in each voxel to
+              preserve the density threshold. Bounding boxes still use the
+              original points. Voxelization can change neighborhood geometry, so
+              quality is measured alongside speed.
+            </p>
+            <a
+              class="text-link"
+              href="https://github.com/AYANE225/Auto-Driver/blob/main/src/perception_core/perception_core/detection/lidar_cluster.py"
+              >Inspect the implementation ↗</a
+            >
+          </div>
+          <div class="result-panel">
+            <div class="panel-heading">
+              <h3>Pipeline latency</h3>
+              <div
+                class="segmented compact"
+                aria-label="Choose benchmark scene"
+              >
+                <button
+                  type="button"
+                  data-benchmark="urban"
+                  class="selected"
+                  aria-pressed="true"
+                >
+                  Urban</button
+                ><button
+                  type="button"
+                  data-benchmark="highway"
+                  aria-pressed="false"
+                >
+                  Highway
+                </button>
+              </div>
+            </div>
+            <p class="small" id="latency-scene">
+              Urban · mean milliseconds per frame · lower is better
+            </p>
+            <div class="latency-row">
+              <div>
+                <span>Raw points</span
+                ><strong id="raw-latency">888.5 ms</strong>
+              </div>
+              <div class="bar-track">
+                <span id="raw-bar" class="bar raw" style="width: 88.85%"></span>
+              </div>
+            </div>
+            <div class="latency-row">
+              <div>
+                <span>0.2 m voxels</span
+                ><strong id="voxel-latency">129.5 ms</strong>
+              </div>
+              <div class="bar-track">
+                <span id="voxel-bar" class="bar" style="width: 12.95%"></span>
+              </div>
+            </div>
+            <p class="small" id="latency-detail">
+              6.86× speedup · p95: 1575.8 → 171.2 ms
+            </p>
+            <div class="table-scroll">
+              <table>
+                <caption>
+                  Tracking quality for the same runs
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Raw points</th>
+                    <th scope="col">0.2 m voxels</th>
+                  </tr>
+                </thead>
+                <tbody id="tracking-metrics">
+                  <tr>
+                    <th scope="row">Precision</th>
+                    <td>0.5566</td>
+                    <td>0.5565</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Recall</th>
+                    <td>0.2248</td>
+                    <td>0.2231</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">HOTA</th>
+                    <td>0.1833</td>
+                    <td>0.1840</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">IDF1</th>
+                    <td>0.1716</td>
+                    <td>0.1726</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">MOTA</th>
+                    <td>0.0449</td>
+                    <td>0.0445</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="report-links">
+              <a id="raw-report" href="benchmarks/urban_voxel_0.json"
+                >Raw-point report ↗</a
+              ><a id="voxel-report" href="benchmarks/urban_voxel_0.2.json"
+                >Voxel report ↗</a
+              >
+            </div>
+          </div>
+        </div>
+        <div class="protocol-note">
+          <strong>What the numbers cover</strong>
+          <p>
+            400 frames per scene; one run per setting. Fusion + IMM, YOLOv8n on
+            RTX 5090; BLAS/OpenMP threads set to 1. Latency excludes five warmup
+            frames, I/O, rendering and evaluation. BEV IoU: MOTA at 0.3, IDF1 at
+            0.5, HOTA over 19 thresholds. Identical XY region and camera FOV for
+            GT and tracks; occluded GT remains included. Both scenes still
+            exceed the 100 ms sensor interval on average, and recall remains
+            low. These are project evaluations.
+          </p>
+        </div>
+      </section>
+
+      <section class="section wrap" id="forecasting">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03 / TRAJECTORY FORECASTING</p>
+            <h2>Test on towns the model hasn’t seen.</h2>
+          </div>
+          <p>
+            Two seconds of observed positions. <br />Six future points through
+            three seconds.
+          </p>
+        </div>
+        <div class="split-strip">
+          <div>
+            <span>TRAIN</span><strong>Town01 · 02 · 03</strong
+            ><small>131,858 windows</small>
+          </div>
+          <div>
+            <span>VALIDATE</span><strong>Town04</strong
+            ><small>40,415 windows</small>
+          </div>
+          <div>
+            <span>TEST</span><strong>Town05 · 10HD</strong
+            ><small>92,751 windows</small>
+          </div>
+        </div>
+        <div class="forecast-panel">
+          <div class="panel-heading">
+            <div>
+              <h3>Held-out test results</h3>
+              <p class="small" id="forecast-count">
+                92,751 windows · lower is better for every metric
+              </p>
+            </div>
+            <div
+              class="segmented compact"
+              aria-label="Choose forecast population"
+            >
+              <button
+                type="button"
+                class="selected"
+                data-population="all"
+                aria-pressed="true"
+              >
+                All actors</button
+              ><button
+                type="button"
+                data-population="moving"
+                aria-pressed="false"
+              >
+                Moving actors
+              </button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="forecast-table">
+              <caption class="sr-only">
+                Forecasting errors on Town05 and Town10HD
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Model</th>
+                  <th scope="col">ADE ↓ <span>m</span></th>
+                  <th scope="col">FDE ↓ <span>m</span></th>
+                  <th scope="col">Miss rate ↓ <span>&gt; 2 m</span></th>
+                </tr>
+              </thead>
+              <tbody id="forecast-metrics">
+                <tr>
+                  <th scope="row">Constant velocity</th>
+                  <td>0.126</td>
+                  <td>0.258</td>
+                  <td>3.00%</td>
+                </tr>
+                <tr>
+                  <th scope="row">Constant acceleration</th>
+                  <td>0.227</td>
+                  <td>0.505</td>
+                  <td>5.83%</td>
+                </tr>
+                <tr>
+                  <th scope="row">Ridge residual</th>
+                  <td>0.167</td>
+                  <td>0.350</td>
+                  <td>2.82%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="forecast-takeaway">
+            <strong>The simple baseline remains competitive.</strong>
+            <p>
+              Ridge reduces the test miss rate, but has higher ADE and FDE than
+              constant velocity. It is an experimental baseline; the runtime
+              pipeline continues to use CV/CTRV forecasts.
+            </p>
+          </div>
+          <a class="text-link" href="benchmarks/forecasting/metrics.json"
+            >Full results, split definitions and file hashes ↗</a
+          >
+        </div>
+        <p class="fine-print">
+          Input: ground-truth actor positions, independent of sensor detection
+          and tracking. Moving actors travel at least 0.5 m over the preceding
+          second. Hyperparameters are selected on validation ADE only. Windows
+          overlap, so these window-weighted results are correlated observations.
+        </p>
+      </section>
+
+      <section class="section wrap" id="system">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">04 / SYSTEM DESIGN</p>
+            <h2>One core. Multiple ways to run it.</h2>
+          </div>
+          <p>
+            Algorithms live in a Python library. <br />ROS 2 and dataset readers
+            adapt the inputs.
+          </p>
+        </div>
+        <ol class="pipeline">
+          <li>
+            <span>01</span>
+            <h3>Detect</h3>
+            <p>RANSAC ground removal <br />DBSCAN + PCA boxes</p>
+          </li>
+          <li>
+            <span>02</span>
+            <h3>Fuse</h3>
+            <p>Project LiDAR boxes <br />Confirm with YOLO detections</p>
+          </li>
+          <li>
+            <span>03</span>
+            <h3>Track</h3>
+            <p>CV / IMM + Hungarian <br />Stable world coordinates</p>
+          </li>
+          <li>
+            <span>04</span>
+            <h3>Forecast</h3>
+            <p>CV / CTRV motion models <br />3 s trajectory horizon</p>
+          </li>
+        </ol>
+        <div class="engineering-grid">
+          <article>
+            <span class="card-index">A / INTEGRATION</span>
+            <h3>Timestamped ROS 2 replay</h3>
+            <p>
+              Recorded LiDAR and sensor-time TF feed the same core. Tracks,
+              predictions and RViz markers publish in the map frame.
+            </p>
+            <a
+              href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/validation_2026-09-29.md"
+              >Replay validation ↗</a
+            >
+          </article>
+          <article>
+            <span class="card-index">B / VERIFICATION</span>
+            <h3>Tests and reference checks</h3>
+            <p>
+              CPU tests, Python 3.9–3.11 CI, geometry checks and a synthetic
+              latency gate. HOTA and IDF1 were compared with TrackEval.
+            </p>
+            <a
+              href="https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml"
+              >Continuous integration ↗</a
+            >
+          </article>
+          <article>
+            <span class="card-index">C / EXTENSIBILITY</span>
+            <h3>Swappable detector backends</h3>
+            <p>
+              LiDAR clustering, YOLO fusion, GT replay and an optional public
+              VGGT camera front-end share the same downstream pipeline.
+            </p>
+            <a
+              href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/engineering.md"
+              >Engineering guide ↗</a
+            >
+          </article>
+        </div>
+        <div class="additional">
+          <div>
+            <p class="eyebrow">BEYOND CARLA</p>
+            <h3>KITTI raw & camera-only exploration</h3>
+            <p>
+              On KITTI drive 0014, camera confirmation reduced false positives
+              from 5,198 to 469, with recall falling from 0.251 to 0.225. The
+              VGGT demo explores camera-derived geometry; its monocular scale
+              limits it to a qualitative demonstration.
+            </p>
+          </div>
+          <div class="additional-links">
+            <a
+              href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/demo_kitti.gif"
+              >KITTI replay ↗</a
+            ><a
+              href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/metrics_kitti_fusion.json"
+              >KITTI fusion report ↗</a
+            ><a
+              href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/screenshots/demo_vggt.gif"
+              >VGGT demo ↗</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="section wrap get-started" id="run">
+        <div>
+          <p class="eyebrow">05 / REPRODUCE</p>
+          <h2>Start with a local run.</h2>
+          <p>
+            The synthetic demo needs no CARLA server, ROS installation or GPU.
+            Sensor replay uses separately recorded datasets.
+          </p>
+          <a
+            class="text-link"
+            href="https://github.com/AYANE225/Auto-Driver#quickstart"
+            >Setup, recordings and Docker ↗</a
+          >
+        </div>
+        <div class="command">
+          <div class="command-title">
+            <span>TERMINAL / CPU DEMO</span
+            ><button type="button" id="copy-command">Copy</button>
+          </div>
+          <pre><code id="quickstart-command">git clone https://github.com/AYANE225/Auto-Driver.git
+cd Auto-Driver
+pip install ./src/perception_core
+python tools/run_demo.py --frames 60 --detector lidar \
+  --no-video --report metrics.json</code></pre>
+          <p class="small" id="copy-status" role="status"></p>
+        </div>
+      </section>
+      <p class="wrap fine-print" id="data-status" role="status"></p>
+      <noscript
+        ><p class="wrap protocol-note">
+          JavaScript is disabled. The urban replay and summary tables remain
+          available; download the
+          <a href="assets/highway.mp4">highway video</a> or open the
+          <a href="benchmarks/forecasting/metrics.json"
+            >full forecasting report</a
+          >
+          for the other results.
+        </p></noscript
+      >
+    </main>
+    <footer class="wrap">
+      <a class="brand" href="#">AUTO-DRIVER</a>
+      <p>
+        Perception · Tracking · Prediction <br /><span
+          >Engineering portfolio / MIT licensed code</span
+        >
+      </p>
+      <a href="https://github.com/AYANE225/Auto-Driver"
+        >Explore the source ↗</a
+      >
+    </footer>
+  </body>
+</html>

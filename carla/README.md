@@ -67,7 +67,11 @@ The report includes MOTA/MOTP, HOTA, IDF1, pipeline configuration, evaluation
 region and pipeline latency. All metrics use stable CARLA actor IDs and
 class-agnostic BEV IoU. GT and tracks share the same XY region and optional camera
 FOV. Occluded GT remains included; no LiDAR-point visibility filter is applied.
-See the [main README](../README.md#carla-camera--lidar-demos) for measured results.
+Use `--voxel-size 0.2` for optional point-count-weighted voxel clustering;
+the default `0` clusters raw points. Boxes are fitted to the original points.
+See the [comparison protocol](../docs/benchmarks/README.md) for speed and quality
+on both recordings, and the [project page](https://ayane225.github.io/Auto-Driver/)
+for playable previews.
 
 ## ROS 2 replay
 
@@ -112,5 +116,9 @@ Each town produces an NPZ with `tick`, `actor_id`, `cls`, `x`, `y`, `yaw`, `dt`
 and `town`. Positions use world coordinates in metres; yaw is in radians;
 classes are 0 vehicle, 1 pedestrian, 2 two-wheeler. Actor IDs are scoped to each
 recording. Existing local recordings cover six towns with 3,000 ticks each.
-This module collects data; the current CV/CTRV predictor has no learned training
-stage.
+The separate `tools/eval_trajectories.py` evaluator trains a Ridge residual
+baseline on Town01/02/03, selects its alpha on Town04 and tests on Town05/10HD.
+It compares CV, constant acceleration and Ridge with identical GT histories;
+moving actors are also reported separately. See the
+[forecasting protocol](../docs/benchmarks/README.md#forecasting-town-disjoint-actor-histories).
+The runtime predictor continues to use CV/CTRV.

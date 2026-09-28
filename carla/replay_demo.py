@@ -14,6 +14,7 @@ from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import platform
+import os
 from time import perf_counter
 
 import numpy as np
@@ -21,6 +22,7 @@ import numpy as np
 from perception_core.common.ego_frame import detections_to_frame, output_to_frame
 from perception_core.common.geometry import invert_se3, transform_box
 from perception_core.detection.mock import GroundTruthDetector
+from perception_core.detection.lidar_cluster import LidarClusterConfig
 from perception_core.eval import evaluate_hota, evaluate_identity, evaluate_tracking
 from perception_core.fusion.late_fusion import LateFusionConfig, project_box_to_image
 from perception_core.io.carla_dataset import CarlaDataset
@@ -29,7 +31,8 @@ from perception_core.tracking.mot import TrackerConfig
 
 
 def build_pipeline(args):
-    cfg = PipelineConfig(tracker=TrackerConfig(motion_model=args.tracker, gating=args.gating))
+    cfg = PipelineConfig(lidar=LidarClusterConfig(voxel_size=args.voxel_size),
+                         tracker=TrackerConfig(motion_model=args.tracker, gating=args.gating))
     camera_detector = None
     detector = None
     if args.detector == "gt":
@@ -180,7 +183,9 @@ def run_replay(args):
         "latency_scope": "pipeline only; excludes IO, evaluation and rendering",
         "replay_seconds": round(replay_seconds, 3),
         "environment": {"python": platform.python_version(), "numpy": np.__version__,
-                        "platform": platform.platform()},
+                        "platform": platform.platform(),
+                        "threads": {key: os.environ.get(key) for key in
+                                    ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS")}},
         "visualization": {"view": args.view if render else None, "frames": len(images),
                           "render_every": args.render_every,
                           "playback_fps": args.fps or 1 / (ds.dt * args.render_every)},
@@ -211,6 +216,8 @@ def main():
     ap.add_argument("--weights", default="yolov8n.pt", help="YOLO checkpoint for fusion")
     ap.add_argument("--device", default="", help="YOLO device, e.g. cpu or cuda:0")
     ap.add_argument("--gate-iou", type=float, default=0.1)
+    ap.add_argument("--voxel-size", type=float, default=0.0,
+                    help="weighted DBSCAN voxel size in metres; 0 uses raw points")
     ap.add_argument("--camera", default="front")
     ap.add_argument("--fov-eval", action="store_true", help="score and display only the selected camera FOV")
     ap.add_argument("--iou", type=float, default=0.3, help="MOT matching BEV IoU")
@@ -231,6 +238,8 @@ def main():
         ap.error("frame counts, image height and FPS must be in their valid positive ranges")
     if not all(0 < value <= 1 for value in (args.iou, args.id_iou, args.gate_iou)):
         ap.error("IoU thresholds must be in (0, 1]")
+    if not np.isfinite(args.voxel_size) or args.voxel_size < 0:
+        ap.error("voxel size must be finite and nonnegative")
     run_replay(args)
 
 

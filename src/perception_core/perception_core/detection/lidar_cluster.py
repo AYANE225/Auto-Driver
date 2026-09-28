@@ -33,12 +33,36 @@ class LidarClusterConfig:
     # DBSCAN clustering (run on x, y, z).
     dbscan_eps: float = 0.8
     dbscan_min_samples: int = 8
+    voxel_size: float = 0.0  # metres; 0 disables centroid clustering
     # Cluster acceptance filters.
     min_points: int = 12
     min_extent: float = 0.2
     max_extent: float = 20.0
     max_height: float = 4.5
     seed: Optional[int] = 0
+
+    def __post_init__(self):
+        if not np.isfinite(self.voxel_size) or self.voxel_size < 0:
+            raise ValueError("voxel_size must be finite and nonnegative")
+
+
+def cluster_points(points: np.ndarray, cfg: LidarClusterConfig) -> np.ndarray:
+    """Cluster weighted voxel centroids, then return labels for every raw point.
+
+    Counts preserve DBSCAN's density threshold; fitting boxes on original points
+    preserves measured extents. Voxelization approximates neighbourhood geometry
+    and can change cluster assignments, so it is an explicit opt-in parameter.
+    """
+    xyz = points[:, :3]
+    model = DBSCAN(eps=cfg.dbscan_eps, min_samples=cfg.dbscan_min_samples)
+    if cfg.voxel_size == 0:
+        return model.fit_predict(xyz)
+    keys = np.floor(xyz / cfg.voxel_size).astype(np.int64)
+    _, inverse, counts = np.unique(keys, axis=0, return_inverse=True, return_counts=True)
+    centroids = np.column_stack([
+        np.bincount(inverse, weights=xyz[:, axis]) / counts for axis in range(3)
+    ])
+    return model.fit_predict(centroids, sample_weight=counts)[inverse]
 
 
 def fit_ground_plane(
@@ -138,7 +162,7 @@ class LidarClusterDetector(Detector):
             pts = pts[~ground]
         if len(pts) < cfg.dbscan_min_samples:
             return []
-        labels = DBSCAN(eps=cfg.dbscan_eps, min_samples=cfg.dbscan_min_samples).fit_predict(pts[:, :3])
+        labels = cluster_points(pts, cfg)
 
         detections: List[Detection] = []
         for lab in set(labels):
@@ -157,4 +181,3 @@ class LidarClusterDetector(Detector):
                 Detection(box=box, score=score, label=label, source=self.name, num_points=len(cluster))
             )
         return detections
-

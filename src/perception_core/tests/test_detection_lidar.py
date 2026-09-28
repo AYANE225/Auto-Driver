@@ -35,3 +35,26 @@ def test_oriented_box_from_axis_aligned_points():
     assert sorted([box.l, box.w])[1] == box.l  # longer side stored as length
     assert box.l > box.w
     assert abs(box.l - 4.0) < 0.4 and abs(box.w - 2.0) < 0.4
+
+
+def test_voxel_clustering_preserves_density_and_raw_box_extents():
+    # Each object occupies fewer than min_samples voxels, but enough raw points.
+    # Unweighted downsampling would incorrectly discard both objects as noise.
+    from perception_core.detection.lidar_cluster import cluster_points
+    rng = np.random.default_rng(4)
+    first = rng.uniform(0.01, 0.29, (30, 3))
+    points = np.concatenate([first, first + [5, 0, 0]])
+    cfg = LidarClusterConfig(voxel_size=0.4, ground_ransac=False, min_extent=0.1)
+    labels = cluster_points(points, cfg)
+    assert len(set(labels)) == 2 and -1 not in labels
+    detections = LidarClusterDetector(cfg).detect(Frame(timestamp=0, lidar=points))
+    assert len(detections) == 2
+    assert all(d.num_points == 30 for d in detections)
+    assert all(d.box.h > 0.2 for d in detections)
+
+
+def test_voxel_size_rejects_invalid_values():
+    import pytest
+    for value in (-1, float('nan'), float('inf')):
+        with pytest.raises(ValueError):
+            LidarClusterConfig(voxel_size=value)

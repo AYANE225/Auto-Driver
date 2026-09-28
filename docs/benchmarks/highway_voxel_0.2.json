@@ -1,0 +1,161 @@
+{
+  "dataset": "highway",
+  "town": "Town04_Opt",
+  "carla_version": "0.9.16",
+  "detector": "fusion",
+  "tracker": "imm",
+  "start_frame": 0,
+  "dt": 0.1,
+  "frames": 400,
+  "gt_count": 322,
+  "tp": 74,
+  "fp": 219,
+  "fn": 248,
+  "id_switches": 0,
+  "precision": 0.2526,
+  "recall": 0.2298,
+  "mota": -0.4503,
+  "motp": 0.424,
+  "hota": {
+    "hota": 0.1987,
+    "deta": 0.1655,
+    "assa": 0.2471,
+    "loca": 0.6329,
+    "det_re": 0.2095,
+    "det_pr": 0.2303,
+    "ass_re": 0.2836,
+    "ass_pr": 0.3626
+  },
+  "identity": {
+    "idf1": 0.0585,
+    "idp": 0.0614,
+    "idr": 0.0559,
+    "idtp": 18,
+    "idfp": 275,
+    "idfn": 304
+  },
+  "evaluation": {
+    "similarity": "BEV IoU",
+    "class_agnostic": true,
+    "mot_iou": 0.3,
+    "id_iou": 0.5,
+    "hota_alphas": "0.05:0.05:0.95",
+    "fov_camera": "front",
+    "x_range": [
+      -50.0,
+      50.0
+    ],
+    "y_range": [
+      -40.0,
+      40.0
+    ],
+    "visibility_filter": false,
+    "raw_gt_count": 1551
+  },
+  "pipeline_config": {
+    "lidar": {
+      "x_range": [
+        -50.0,
+        50.0
+      ],
+      "y_range": [
+        -40.0,
+        40.0
+      ],
+      "z_range": [
+        -3.0,
+        4.0
+      ],
+      "ground_ransac": true,
+      "ground_dist_thresh": 0.2,
+      "ground_max_iter": 50,
+      "ground_max_normal_tilt": 0.3,
+      "dbscan_eps": 0.8,
+      "dbscan_min_samples": 8,
+      "voxel_size": 0.2,
+      "min_points": 12,
+      "min_extent": 0.2,
+      "max_extent": 20.0,
+      "max_height": 4.5,
+      "seed": 0
+    },
+    "tracker": {
+      "iou_threshold": 0.1,
+      "max_age": 5,
+      "min_hits": 3,
+      "process_noise": 2.0,
+      "measurement_noise": 0.5,
+      "yaw_smoothing": 0.5,
+      "dim_smoothing": 0.3,
+      "max_history": 50,
+      "motion_model": "imm",
+      "gating": false,
+      "gate_chi2": 9.21,
+      "turn_rate_noise": 0.3,
+      "transition_stay": 0.95
+    },
+    "predictor": {
+      "horizon": 3.0,
+      "step": 0.5,
+      "mode": "auto",
+      "min_turn_speed": 1.0,
+      "turn_rate_thresh": 0.03
+    },
+    "fusion": {
+      "iou_threshold": 0.1,
+      "score_boost": 0.3,
+      "overwrite_label": true,
+      "require_camera": true
+    },
+    "track_in_world": true
+  },
+  "camera_detector": {
+    "model": "yolov8n.pt",
+    "conf": 0.25,
+    "iou": 0.45,
+    "device": "cuda:0",
+    "imgsz": 640,
+    "verbose": false,
+    "keep": null
+  },
+  "latency_ms": {
+    "detect_ms": {
+      "mean": 69.823,
+      "p95": 86.908
+    },
+    "fuse_ms": {
+      "mean": 5.066,
+      "p95": 5.812
+    },
+    "track_ms": {
+      "mean": 77.076,
+      "p95": 404.401
+    },
+    "predict_ms": {
+      "mean": 0.378,
+      "p95": 0.745
+    },
+    "total_ms": {
+      "mean": 152.343,
+      "p95": 497.444
+    }
+  },
+  "latency_warmup_frames": 5,
+  "latency_scope": "pipeline only; excludes IO, evaluation and rendering",
+  "replay_seconds": 62.726,
+  "environment": {
+    "python": "3.11.15",
+    "numpy": "2.4.6",
+    "platform": "Linux-6.8.0-139-generic-x86_64-with-glibc2.39",
+    "threads": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1"
+    }
+  },
+  "visualization": {
+    "view": null,
+    "frames": 0,
+    "render_every": 1,
+    "playback_fps": 10.0
+  }
+}

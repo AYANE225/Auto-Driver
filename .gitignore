@@ -26,6 +26,7 @@ log/
 # Generated demo / data artifacts
 outputs/
 *.mp4
+!docs/assets/*.mp4
 *.gif
 !docs/screenshots/*.gif
 data/
