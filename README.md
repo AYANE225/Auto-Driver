@@ -1,6 +1,6 @@
 # Auto-Driver
 
-**自动驾驶感知、多目标跟踪与轨迹预测：从相机和激光雷达记录，到可复现的评估与 ROS 2 接入。**
+**自动驾驶感知、预测、规划与控制：从相机和激光雷达输入，到可复现的闭环驾驶验证。**
 
 [![CI](https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml/badge.svg)](https://github.com/AYANE225/Auto-Driver/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.9–3.11-3776AB)
@@ -19,17 +19,43 @@
 <a href="https://ayane225.github.io/Auto-Driver/#gallery">实验视频</a></p>
 
 
-项目使用独立 Python + C++ 核心完成 **检测 → 相机确认 → 世界坐标系跟踪 → 运动预测**。CARLA、KITTI 和合成场景读取器提供统一输入，ROS 2 节点复用同一套算法。当前范围是感知与预测，不包含路径规划和车辆控制。
+项目使用独立 Python + C++ 核心完成 **检测 → 相机确认 → 世界坐标系跟踪 → 运动预测 → 路径规划 → 车辆控制**。CARLA、KITTI 和合成场景提供统一输入；ROS 2 节点复用感知算法，规划与控制已有合成闭环及 CARLA 实际车辆验证。
 
 | 实测改进 | 评估规模 | 工程交付 |
 |---|---|---|
 | C++ 后城市流水线 **130.2 → 89.3 ms**，高速 **152.0 → 78.1 ms** | 两场景共 **800 帧**传感器记录 | ROS 2 回放、时间戳 TF、Docker、CPU 测试、CI |
 | 0.2 m 体素聚类；城市召回率 0.2248 → 0.2231 | 六城镇轨迹；**92,751** 个测试窗口 | HOTA / IDF1 与 TrackEval 对照 |
+| **20/20** 合成闭环验收通过 | 真值检测与合成 LiDAR，各 10 个场景 | CARLA 车道行驶、实际 LiDAR 障碍停车；自车关闭 autopilot |
+
+## 规划与控制已经接入
+
+[![路径规划、实际行驶轨迹与控制反馈](docs/assets/driving_preview.jpg)](https://ayane225.github.io/Auto-Driver/#driving)
+
+- **路线与避障：** 有向道路图 A*、封闭边重选路线、五次多项式局部轨迹、动态矩形碰撞检查。
+- **驾驶行为：** 弯道限速、时间间距跟车、横穿行人让行、停车线约束、绿灯起步、终点停车。
+- **车辆控制：** Pure Pursuit 转向、速度反馈、转向与加减速限制、紧急制动、感知超时后的制动与恢复。
+- **实际闭环：** CARLA 中控制 Tesla Model 3 完成约 **61.08 m** 的车道路线；真实 64 线 LiDAR 测试行驶 **27.71 m** 后在障碍前停车。两次测试均未记录碰撞或压线。
+
+十个合成场景分别使用真值检测和带噪声表面点云检测，20 次运行全部通过，保留完整指标与运行数据。
+合成点云未模拟光线遮挡；CARLA 测试限定在无路口单车道，红绿灯与绕障目前在合成闭环中验证。
+
+[**播放闭环驾驶 ↗**](https://ayane225.github.io/Auto-Driver/#driving) · [CARLA 实际控制视频](https://ayane225.github.io/Auto-Driver/#carla-driving) · [方法与复现](docs/planning_control_zh.md) · [全部运行指标](docs/assets/driving/index.json)
+
+```bash
+python tools/run_driving.py --scenario all --detector gt \
+  --out outputs/driving-gt --assert-success
+python tools/run_driving.py --scenario all --detector lidar \
+  --out outputs/driving-lidar --assert-success
+```
+
+安装方式见下方快速开始；这两条命令不需要 CARLA。输出目录须为新目录。
 
 ## 在线可以操作什么
 
 [展示页](https://ayane225.github.io/Auto-Driver/) 提供以下功能，无需安装仿真器：
 
+- **闭环驾驶：** 十场景、两种输入，查看实际行驶、候选轨迹、速度曲线、转向与制动；支持时间轴、播放倍率和 JSON 下载。
+- **CARLA 控制视频：** 自车相机记录对应实际控制程序，提供原始控制与评估报告。
 - **3D 点云：** 城市、高速共 42 个时刻，切换斜视/俯视/前视，拖动旋转、环绕观察、缩放与 PNG 下载。每帧最多 20,000 个显示点，支持轻量模式和键盘操作；相机画面与点云同步更新。
 - **耗时拆解：** 从实测 JSON 绘制四阶段堆叠条形图；切换场景、选择阶段，看清时间主要花在哪里。
 - **匹配演示：** 调整 IoU 阈值，比较分配前后过滤的结果；另一个示例说明最大总 IoU 与最大匹配数量的差别。
@@ -118,6 +144,9 @@ flowchart LR
     D --> E[CV / IMM 多目标跟踪]
     E --> F[CV / CTRV 轨迹预测]
     F --> G[ROS 2 / 离线评估 / 网页回放]
+    F --> H[A* 路线 + 局部轨迹与速度规划]
+    H --> I[Pure Pursuit + 速度控制]
+    I --> J[自行车模型 / CARLA 车辆反馈]
 ```
 
 - **独立算法核心：** NumPy、SciPy、scikit-learn，可选 C++14 / pybind11 批量 IoU；深度模型、可视化、ROS 和 CARLA 为可选依赖。

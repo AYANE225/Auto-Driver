@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "perception_core"
 version = "0.1.0"
-description = "Framework-agnostic autonomous-driving perception core: detection, sensor fusion, multi-object tracking and motion prediction."
+description = "Autonomous-driving core: perception, tracking, prediction, motion planning, control and closed-loop simulation."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

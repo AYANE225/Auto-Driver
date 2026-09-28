@@ -23,13 +23,27 @@ async function main() {
       ["stage_preview", "#latency-lab .latency-lab-panel"],
       ["association_preview", "#association-lab .association-panel"],
     ])
-      await page
-        .locator(selector)
-        .screenshot({
-          path: path.join(out, `${name}.jpg`),
-          type: "jpeg",
-          quality: 92,
-        });
+      await page.locator(selector).screenshot({
+        path: path.join(out, `${name}.jpg`),
+        type: "jpeg",
+        quality: 92,
+      });
+    await page.locator("#driving").scrollIntoViewIfNeeded();
+    await page.waitForFunction(
+      () =>
+        document.getElementById("driving-canvas").dataset.scene === "obstacle",
+    );
+    await page.locator("#driving-time").evaluate((el) => {
+      el.value = "28";
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page
+      .locator("#driving .driving-panel")
+      .screenshot({
+        path: path.join(out, "driving_preview.jpg"),
+        type: "jpeg",
+        quality: 92,
+      });
   } finally {
     await browser.close();
   }

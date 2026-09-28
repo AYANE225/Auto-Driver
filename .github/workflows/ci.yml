@@ -32,6 +32,7 @@ jobs:
           done
           node tools/test_website.cjs
           node tools/test_showcase.cjs
+          node tools/test_driving.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -91,6 +92,26 @@ jobs:
           python-version: "3.11"
       - run: pip install ruff
       - run: ruff check --config src/perception_core/pyproject.toml src carla tools
+
+  driving:
+    name: closed-loop LiDAR driving
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ./src/perception_core
+      - name: Run all ten closed-loop LiDAR scenarios
+        env:
+          OPENBLAS_NUM_THREADS: "1"
+          OMP_NUM_THREADS: "1"
+        run: python tools/run_driving.py --scenario all --detector lidar --out "$RUNNER_TEMP/driving" --assert-success
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: driving-reports
+          path: ${{ runner.temp }}/driving
 
   smoke:
     name: end-to-end smoke demo (headless)

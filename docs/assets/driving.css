@@ -1,0 +1,376 @@
+.driving-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.driving-features span {
+  font-size: 12px;
+  color: var(--green);
+  border: 1px solid var(--line);
+  padding: 7px 12px;
+  border-radius: 20px;
+}
+.driving-panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.driving-toolbar,
+.driving-playback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 18px 22px;
+}
+.driving-toolbar label,
+.driving-playback label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.driving-toolbar a {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--green);
+}
+.driving-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 245px;
+}
+.driving-map {
+  position: relative;
+  overflow: hidden;
+  background: #0b1520;
+}
+#driving-canvas {
+  display: block;
+  width: 100%;
+  height: 430px;
+}
+#driving-canvas:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -3px;
+}
+.driving-map-label {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: grid;
+  gap: 6px;
+  pointer-events: none;
+}
+.driving-map-label span {
+  font: 10px var(--mono);
+  letter-spacing: 0.12em;
+  color: var(--green);
+}
+.driving-map-label strong {
+  font-size: 22px;
+  font-weight: 500;
+}
+.driving-map-label small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.driving-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  font-size: 10px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.driving-legend span::before {
+  content: "";
+  width: 15px;
+  height: 2px;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+  background: #90e0b8;
+}
+.driving-legend .planned::before {
+  background: #ead99a;
+}
+.driving-legend .obstacle::before {
+  background: #df9b7c;
+}
+.driving-legend .candidate::before {
+  background: #667e8f;
+}
+.driving-dashboard {
+  border-left: 1px solid var(--line);
+  padding: 24px;
+}
+#driving-speed {
+  display: block;
+  font: 42px var(--mono);
+  font-weight: 400;
+  margin-top: 16px;
+  color: var(--green);
+}
+#driving-speed small {
+  font-size: 14px;
+  color: var(--muted);
+}
+#driving-status {
+  font-size: 14px;
+  margin: 12px 0 24px;
+  min-height: 24px;
+}
+.driving-dashboard dl {
+  margin: 0;
+  display: grid;
+  gap: 15px;
+}
+.driving-dashboard dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.driving-dashboard dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.driving-dashboard dd {
+  font: 12px var(--mono);
+  margin: 0;
+}
+#driving-rejections {
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 20px;
+}
+.driving-playback {
+  border-top: 1px solid var(--line);
+}
+.driving-playback button,
+.driving-command button {
+  border: 1px solid var(--line);
+  padding: 8px 13px;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--green);
+  cursor: pointer;
+  font-size: 12px;
+}
+.driving-playback button[aria-pressed="true"] {
+  background: var(--green);
+  color: var(--bg);
+}
+#driving-time {
+  flex: 1;
+  min-width: 100px;
+  accent-color: var(--green);
+}
+#driving-time-label {
+  font: 12px var(--mono);
+  min-width: 52px;
+}
+.driving-speed-chart {
+  position: relative;
+  padding: 4px 22px 0;
+}
+.driving-speed-chart > span {
+  position: absolute;
+  top: 10px;
+  left: 32px;
+  color: var(--muted);
+  font-size: 10px;
+}
+#driving-speed-chart {
+  display: block;
+  width: 100%;
+  height: 115px;
+}
+.driving-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+}
+.driving-metrics > div {
+  padding: 18px 22px;
+  display: grid;
+  gap: 6px;
+  border-right: 1px solid var(--line);
+}
+.driving-metrics strong {
+  font: 21px var(--mono);
+  color: var(--fg);
+  font-weight: 400;
+}
+.driving-metrics span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.driving-report-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 18px 0;
+  font-size: 12px;
+  color: var(--green);
+}
+.driving-results {
+  border: 1px solid var(--line);
+  padding: 18px 22px;
+  font-size: 13px;
+}
+.driving-results summary {
+  cursor: pointer;
+}
+.driving-results table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+.driving-results td,
+.driving-results th {
+  padding: 12px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.driving-pass {
+  color: var(--green);
+}
+.driving-fail {
+  color: #df9b7c;
+}
+.driving-command {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.driving-command code {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+#driving-copy-status {
+  font-size: 12px;
+}
+.driving-videos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.driving-videos article {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.driving-videos video {
+  width: 100%;
+  display: block;
+  aspect-ratio: 16/9;
+  background: #0a121b;
+}
+.driving-videos article > div {
+  padding: 24px;
+}
+.driving-videos h3 {
+  margin: 0 0 10px;
+  font-size: 21px;
+}
+.driving-videos p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.driving-videos a {
+  color: var(--green);
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .driving-view {
+    grid-template-columns: 1fr;
+  }
+  .driving-dashboard {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 25px;
+  }
+  .driving-dashboard > .eyebrow {
+    margin: 0;
+  }
+  #driving-speed {
+    grid-column: 1;
+    margin: 0;
+  }
+  #driving-status {
+    grid-column: 1;
+    margin: 0;
+  }
+  .driving-dashboard dl {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
+  #driving-rejections {
+    margin: 0;
+  }
+}
+@media (max-width: 600px) {
+  #driving-canvas {
+    height: 330px;
+  }
+  .driving-toolbar,
+  .driving-playback {
+    padding: 15px;
+    gap: 12px;
+  }
+  .driving-toolbar a {
+    margin-left: 0;
+  }
+  .driving-toolbar label:first-child {
+    flex-basis: 100%;
+  }
+  .driving-toolbar select {
+    max-width: calc(100vw - 115px);
+  }
+  .driving-map-label {
+    left: 16px;
+    top: 18px;
+  }
+  .driving-map-label strong {
+    font-size: 19px;
+  }
+  .driving-legend {
+    left: 16px;
+    gap: 10px;
+  }
+  .driving-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  .driving-metrics > div {
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .driving-dashboard {
+    padding: 20px 16px;
+    gap: 12px;
+  }
+  #driving-speed {
+    font-size: 34px;
+  }
+  .driving-videos {
+    grid-template-columns: 1fr;
+  }
+  #driving-time {
+    min-width: 90px;
+  }
+  .driving-playback label {
+    margin-left: auto;
+  }
+}

@@ -1,7 +1,8 @@
 # perception_core
 
 Framework-agnostic autonomous-driving perception core: **detection → fusion →
-tracking → prediction**. No hard dependency on ROS, CARLA, or a deep-learning
+tracking → prediction**, plus route search, local motion planning and vehicle
+control with closed-loop simulation. No hard dependency on ROS, CARLA, or a deep-learning
 framework — the whole stack runs on NumPy / SciPy / scikit-learn and is unit
 tested on CPU.
 
@@ -26,12 +27,20 @@ for frame in generate_frames(make_default_scene(), num_frames=40):
 | Fusion     | `LateFusion` (project 3D→image, IoU label transfer)| –                   |
 | Tracking   | `MultiObjectTracker` (CV KF or IMM CV/CT + Hungarian; optional Mahalanobis gating) | scipy |
 | Prediction | `MotionPredictor` (CV / CTRV, multi-modal)         | –                   |
+| Planning   | `RoadGraph`, `ReferencePath`, `LocalPlanner` (A*, lateral/speed sampling, collision checks) | numpy / scipy |
+| Control    | `PathController` (Pure Pursuit + speed feedback), `bicycle_step` | numpy |
 | Evaluation | CLEAR-MOT, HOTA, IDF1, ADE/FDE                    | numpy / scipy       |
 | Data       | `CarlaDataset`, `KittiRawReader`, synthetic scenes | numpy              |
 | Rendering  | Camera overlays and BEV with shared track colors  | pillow / matplotlib *(opt)* |
 
 All detectors implement the same `Detector` interface, so backends are
 swappable without touching the pipeline.
+
+Planning consumes world-frame `PerceptionOutput` and rear-axle `VehicleState`.
+Run `tools/run_driving.py` from the repository root for ten deterministic
+closed-loop scenarios. `carla/run_driving.py` applies commands to actual CARLA
+vehicles without ego autopilot. See `docs/planning_control_zh.md` for coordinate
+conventions, acceptance conditions, reproduction and the bounded test scope.
 
 ## Native tracking geometry
 

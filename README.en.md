@@ -14,7 +14,7 @@
 
 [![Auto-Driver: camera and bird's-eye tracking on a CARLA urban recording](docs/assets/overview.jpg)](https://ayane225.github.io/Auto-Driver/#demo)
 
-A reusable Python + C++ core takes sensor frames through **detection → camera confirmation → world-frame tracking → motion prediction**. Dataset readers and ROS 2 nodes connect the same algorithms to CARLA recordings, KITTI raw and synthetic scenes. The project covers perception and forecasting; planning and vehicle control are outside its current scope.
+A reusable Python + C++ core takes sensor frames through **detection → camera confirmation → world-frame tracking → prediction → planning → control**. Dataset readers and ROS 2 nodes connect perception to CARLA recordings, KITTI raw and synthetic scenes. Planning and control run in closed-loop synthetic tests and a live CARLA client.
 
 | Measured improvement | Evaluation coverage | Engineering delivery |
 |---|---|---|
@@ -29,6 +29,32 @@ with up to 20,000 display points per sampled frame, [stage timings](https://ayan
 and [KITTI / VGGT videos](https://ayane225.github.io/Auto-Driver/#gallery).
 Point samples are quantized at 2 mm for display only; tracking overlays retain the
 previous configuration. The association examples are educational matrices, separate from measured results.
+
+## Closed-loop planning and control
+
+[![Motion planning and vehicle feedback](docs/assets/driving_preview.jpg)](https://ayane225.github.io/Auto-Driver/#driving)
+
+A* route search, quintic lateral candidates, timed oriented-box collision checks,
+time-headway following, curve speed limits, stop lines, Pure Pursuit steering,
+speed feedback, emergency braking and stale-input handling are implemented in the core.
+**20/20** deterministic acceptance runs passed: ten scenarios each with GT detections
+and synthetic surface LiDAR processed by the existing detector/tracker/predictor.
+
+The CARLA client drives without ego autopilot. A GT-input lane-following run reached
+its goal after **61.08 m**; an actual 64-channel LiDAR run stopped before a parked vehicle
+after **27.71 m**. Both recorded zero collision and lane-invasion events. These are
+bounded, junction-free single-lane tests; synthetic LiDAR does not model ray occlusion.
+
+[Interactive driving replay](https://ayane225.github.io/Auto-Driver/#driving) ·
+[CARLA videos](https://ayane225.github.io/Auto-Driver/#carla-driving) ·
+[Methods, scope and reproduction](docs/planning_control_zh.md)
+
+```bash
+python tools/run_driving.py --scenario all --detector gt --out outputs/driving-gt --assert-success
+python tools/run_driving.py --scenario all --detector lidar --out outputs/driving-lidar --assert-success
+```
+
+Use new output directories. Neither command requires CARLA.
 
 ## Watch the system
 

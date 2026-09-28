@@ -24,10 +24,12 @@
     />
     <link rel="stylesheet" href="assets/site.css" />
     <link rel="stylesheet" href="assets/showcase.css" />
+    <link rel="stylesheet" href="assets/driving.css" />
     <script src="assets/site.js" defer></script>
     <script src="assets/tracking.js" defer></script>
     <script src="assets/explorers.js" defer></script>
     <script src="assets/showcase.js" defer></script>
+    <script src="assets/driving.js" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">跳转到主要内容</a>
@@ -47,9 +49,9 @@
         导航
       </button>
       <nav id="main-nav" aria-label="主要导航">
-        <a href="#pointcloud">3D 点云</a><a href="#explorer">逐帧查看</a
-        ><a href="#results">实测结果</a><a href="#forecasting">轨迹预测</a
-        ><a href="#run">本地运行</a
+        <a href="#driving">规划与控制</a><a href="#pointcloud">3D 点云</a
+        ><a href="#explorer">逐帧查看</a><a href="#results">实测结果</a
+        ><a href="#forecasting">轨迹预测</a><a href="#run">本地运行</a
         ><a class="github" href="https://github.com/AYANE225/Auto-Driver"
           >GitHub ↗</a
         >
@@ -62,10 +64,10 @@
         </p>
         <div class="hero-heading">
           <div>
-            <h1>从传感器数据<br />到<em>可追踪的运动。</em></h1>
+            <h1>从传感器数据<br />到<em>可执行的轨迹。</em></h1>
             <p class="hero-note">
-              检测、融合、跟踪与预测，连接到同一套 Python + C++
-              核心。用实录场景展示系统，用可复现的评估说明效果。
+              感知、跟踪、预测、路径规划与车辆控制，连接到同一套 Python + C++
+              核心。查看闭环驾驶、CARLA 实际控制和可复现的评估。
             </p>
           </div>
           <a class="hero-preview" href="#pointcloud"
@@ -78,8 +80,8 @@
           >
         </div>
         <div class="hero-actions">
-          <a class="button primary" href="#pointcloud"
-            >进入 3D 场景 <span>↘</span></a
+          <a class="button primary" href="#driving"
+            >查看闭环驾驶 <span>↘</span></a
           ><a class="text-link" href="#demo">播放系统演示 ↓</a
           ><span class="hero-stack">Python + C++ · CARLA · ROS 2 Humble</span>
         </div>
@@ -115,6 +117,235 @@
           ><b>04 / 更多实验</b><span>KITTI 实车与 VGGT 预览 ↗</span></a
         >
       </nav>
+      <section class="section wrap" id="driving">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">新增 / 路径规划与车辆控制</p>
+            <h2>看见障碍，规划路径，控制车辆。</h2>
+          </div>
+          <p>
+            十个可复现的闭环场景。<br />查看实际行驶轨迹、候选路径、速度和控制指令。
+          </p>
+        </div>
+        <div class="driving-features">
+          <span>A* 路线搜索</span><span>局部绕障</span><span>时间间距跟车</span
+          ><span>行人让行</span><span>停车线与起步</span><span>紧急制动</span>
+        </div>
+        <div class="driving-panel">
+          <div class="driving-toolbar">
+            <label
+              >场景
+              <select id="driving-scene" aria-label="闭环驾驶场景">
+                <option value="obstacle">静态障碍绕行</option>
+                <option value="cruise">巡航与到达终点</option>
+                <option value="curve">弯道跟踪与限速</option>
+                <option value="following">跟车减速</option>
+                <option value="crossing">横穿行人让行</option>
+                <option value="traffic_light">红灯停车与绿灯起步</option>
+                <option value="blocked">道路阻断停车</option>
+                <option value="emergency">突现障碍紧急制动</option>
+                <option value="dropout">感知超时与恢复</option>
+                <option value="reroute">封路后的 A* 路线搜索</option>
+              </select></label
+            >
+            <label
+              >输入
+              <select id="driving-input" aria-label="驾驶测试输入">
+                <option value="gt">真值检测基线</option>
+                <option value="lidar">合成 LiDAR 检测</option>
+              </select></label
+            >
+            <label
+              ><input type="checkbox" id="driving-candidates" checked />
+              候选轨迹</label
+            >
+            <label><input type="checkbox" id="driving-tracks" /> 跟踪框</label>
+            <a
+              id="driving-download"
+              href="assets/driving/gt/obstacle.json"
+              download
+              >下载回放 JSON ↓</a
+            >
+          </div>
+          <div class="driving-view">
+            <div class="driving-map">
+              <canvas
+                id="driving-canvas"
+                aria-label="闭环驾驶鸟瞰图：道路、障碍物、实际车辆位置与规划轨迹"
+                tabindex="0"
+              ></canvas>
+              <div class="driving-map-label">
+                <span>RECORDED / CLOSED LOOP</span
+                ><strong id="driving-title">静态障碍绕行</strong
+                ><small>米 · 世界坐标系 · 合成场景</small>
+              </div>
+              <div class="driving-legend">
+                <span class="actual">实际行驶</span
+                ><span class="planned">选中轨迹</span
+                ><span class="obstacle">障碍真值</span
+                ><span class="candidate">候选轨迹</span>
+              </div>
+            </div>
+            <aside class="driving-dashboard" aria-label="车辆状态">
+              <span class="eyebrow">车辆反馈</span
+              ><strong id="driving-speed">— <small>m/s</small></strong>
+              <p id="driving-status" role="status">向下滚动后加载运行记录…</p>
+              <dl>
+                <div>
+                  <dt>转向角</dt>
+                  <dd id="driving-steer">—</dd>
+                </div>
+                <div>
+                  <dt>加速度指令</dt>
+                  <dd id="driving-accel">—</dd>
+                </div>
+                <div>
+                  <dt>路线进度</dt>
+                  <dd id="driving-progress">—</dd>
+                </div>
+                <div>
+                  <dt>候选轨迹</dt>
+                  <dd id="driving-count">—</dd>
+                </div>
+                <div>
+                  <dt>信号状态</dt>
+                  <dd id="driving-signal">—</dd>
+                </div>
+              </dl>
+              <p id="driving-rejections" class="small">
+                载入后可查看约束检查结果。
+              </p>
+            </aside>
+          </div>
+          <div class="driving-playback">
+            <button
+              type="button"
+              id="driving-play"
+              disabled
+              aria-pressed="false"
+            >
+              播放驾驶
+            </button>
+            <input
+              type="range"
+              id="driving-time"
+              min="0"
+              max="1"
+              value="0"
+              disabled
+              aria-label="闭环驾驶时间轴"
+            />
+            <output id="driving-time-label">0.0 s</output>
+            <label
+              >速度
+              <select id="driving-rate">
+                <option value="0.5">0.5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+              </select></label
+            >
+          </div>
+          <div class="driving-speed-chart">
+            <span>实际速度 / m·s⁻¹</span
+            ><canvas
+              id="driving-speed-chart"
+              aria-label="当前运行的实际速度曲线与所选时刻"
+            ></canvas>
+          </div>
+          <div id="driving-metrics" class="driving-metrics" aria-live="polite">
+            加载场景评估结果…
+          </div>
+        </div>
+        <p class="fine-print">
+          车辆由 Python
+          规划与控制代码闭环驱动，再导出记录供浏览器回放。真值基线绕过检测；合成
+          LiDAR
+          使用表面采样点云、真实聚类检测、跟踪与预测，但没有光线遮挡模型。规划器只使用当前观测和预测；障碍真值仅用于评分与显示。灰色候选为可行、橙色为被约束拒绝，不代表最终执行。碰撞检查、场景范围与耗时定义见完整报告。
+        </p>
+        <div class="driving-report-links">
+          <a href="assets/driving/index.json">20 次运行的指标与数据哈希 ↗</a
+          ><a
+            href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/planning_control_zh.md"
+            >方法、复现与限制 ↗</a
+          >
+        </div>
+        <details class="driving-results">
+          <summary>展开全部场景的验收结果</summary>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>场景</th>
+                  <th>真值检测基线</th>
+                  <th>合成 LiDAR</th>
+                </tr>
+              </thead>
+              <tbody id="driving-results-body"></tbody>
+            </table>
+          </div>
+        </details>
+        <div class="driving-command">
+          <code id="driving-command"
+            >python tools/run_driving.py --scenario obstacle --detector gt --out
+            outputs/driving-obstacle-gt</code
+          ><button id="driving-copy" type="button">复制复现命令</button
+          ><span id="driving-copy-status" role="status"></span>
+        </div>
+      </section>
+      <section class="section wrap" id="carla-driving">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">CARLA / 实际闭环控制</p>
+            <h2>同一套代码，接到仿真车辆上。</h2>
+          </div>
+          <p>本项目输出转向、油门与制动。<br />自车未启用 CARLA autopilot。</p>
+        </div>
+        <div class="driving-videos">
+          <article>
+            <video
+              id="driving-carla-gt-video"
+              controls
+              playsinline
+              preload="none"
+              poster="assets/driving_carla_gt.jpg"
+            >
+              <source src="assets/driving_carla_gt.mp4" type="video/mp4" />
+            </video>
+            <div>
+              <h3>沿车道行驶并停车</h3>
+              <p>
+                Town10HD · 当前目标真值输入 ·
+                单车道路线。视频来自实际受控自车相机。
+              </p>
+              <a href="assets/driving/carla_gt.json">控制记录与评估 JSON ↗</a>
+            </div>
+          </article>
+          <article>
+            <video
+              id="driving-carla-lidar-video"
+              controls
+              playsinline
+              preload="none"
+              poster="assets/driving_carla_lidar.jpg"
+            >
+              <source src="assets/driving_carla_lidar.mp4" type="video/mp4" />
+            </video>
+            <div>
+              <h3>LiDAR 检测后停车避险</h3>
+              <p>
+                Town10HD · 实际 64 线 LiDAR 输入 ·
+                聚类、跟踪、预测、规划与制动闭环。
+              </p>
+              <a href="assets/driving/carla_lidar.json"
+                >控制记录与评估 JSON ↗</a
+              >
+            </div>
+          </article>
+        </div>
+        <p class="fine-print">
+          这两次测试限定在无路口的单车道路线，记录碰撞与压线事件；没有验证城市交通全场景。转向映射针对测试车辆固定了转向比例曲线。视频时长是仿真时间，不代表计算实时性；红绿灯停车与绕障目前在上方合成闭环场景中验证。
+        </p>
+      </section>
       <section class="section wrap" id="pointcloud">
         <div class="section-head">
           <div>
@@ -1213,8 +1444,10 @@
           <details>
             <summary>是否实现了自动驾驶规划与控制？</summary>
             <p>
-              当前范围是感知、跟踪与轨迹预测，没有路径规划或车辆控制模块。纯相机
-              VGGT 前端使用公开预训练模型，也没有经过完整的米制检测精度验证。
+              已加入 A* 路线搜索、局部轨迹采样、速度规划、Pure Pursuit
+              跟踪控制、停车线和紧急制动。 上方提供合成闭环测试及 CARLA
+              实际车辆控制记录。地图路线与信号状态由场景提供，
+              尚未覆盖真实道路部署或复杂城市交互。纯相机 VGGT 前端仍为定性探索。
             </p>
           </details>
           <details>

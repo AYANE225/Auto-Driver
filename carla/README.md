@@ -13,12 +13,20 @@ interpreter version depends on your ROS installation, not on the recording forma
 |------|---------|
 | `record_scenario.py` | Spawn ego, LiDAR, cameras, vehicles and walkers; save synchronized frames |
 | `record_trajectories.py` | Record actor states in multiple towns without sensor rendering |
+| `run_driving.py` | Closed-loop planner/controller driving the ego vehicle without autopilot; GT or real LiDAR input |
 | `dataset.py` | Compatibility import for `perception_core.io.CarlaDataset` |
 | `replay_demo.py` | LiDAR / YOLO fusion / GT replay, CV / IMM tracking, camera + BEV GIF and metrics |
 | `config/scenarios/*.yaml` | Town, traffic, sensor settings and random seeds |
 | `install_carla.sh` | Legacy CARLA 0.9.15 installer requiring Python 3.8; not the environment used for these demos |
 
 ## Record a scenario
+
+For actual closed-loop driving, run a dedicated CARLA 0.9.16 server, then
+`python carla/run_driving.py --scenario obstacle --detector lidar --images --out outputs/carla-driving`.
+The client selects a junction-free lane, drives using the core planner/controller,
+and records controls, camera frames, collision and lane-invasion events. Use a new
+output directory. See [planning and control validation](../docs/planning_control_zh.md)
+for the two measured CARLA runs and the separate ten-scenario synthetic test suite.
 
 Run these commands from the repository root, with a matching CARLA server and
 client already installed. The demo server was 0.9.16; the legacy installer above
