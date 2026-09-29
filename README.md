@@ -29,7 +29,9 @@
 
 ## 规划与控制已经接入
 
-[![路径规划、实际行驶轨迹与控制反馈](docs/assets/driving_preview.jpg)](https://ayane225.github.io/Auto-Driver/#driving)
+[![CARLA 前车急刹：相机与实测速度、参考速度、油门和制动同步](docs/assets/driving/gifs/carla_lead_braking.gif)](https://ayane225.github.io/Auto-Driver/#driving-gifs)
+
+**CARLA 前车急刹 · 4–11 s · LiDAR 输入 · 原始 10 Hz · 1× 仿真时间。** 前车在第 6 秒全制动，曲线保留实际油门与制动变化。[完整视频与曲线 ↗](https://ayane225.github.io/Auto-Driver/#carla-driving)
 
 - **路线与避障：** 有向道路图 A*、封闭边重选路线、五次多项式局部轨迹、动态矩形碰撞检查。
 - **驾驶行为：** 弯道限速、时间间距跟车、横穿行人让行、停车线约束、绿灯起步、终点停车。
@@ -39,7 +41,18 @@
 十三个合成场景分别使用真值检测和带噪声表面点云检测，26 次运行全部通过，保留完整指标与运行数据。
 新增前车急刹、邻道切入、绿灯后连续行人横穿；改变车距、切入时长与绿灯时刻的 **18/18** 次参数测试通过，可下载逐项记录。
 
-[![CARLA 前车急刹与同步速度、油门、制动曲线](docs/assets/driving_control_preview.jpg)](https://ayane225.github.io/Auto-Driver/#carla-driving)
+<table>
+<tr>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/cut_in.gif" alt="合成 LiDAR 邻道切入与减速跟车，含速度和加速度指令" /></a><br /><b>邻道切入 → 减速跟车</b><br />合成 LiDAR · 2–10 s · 5 Hz · 1×</td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/obstacle.gif" alt="合成 LiDAR 静态绕障，当前规划与实际轨迹分色显示" /></a><br /><b>静态绕障 → 轨迹跟踪</b><br />合成 LiDAR · 2–9 s · 5 Hz · 1×</td>
+</tr>
+<tr>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/signal_crossing.gif" alt="绿灯后继续礼让两名横穿行人，随后恢复巡航" /></a><br /><b>绿灯亮起 → 继续礼让行人</b><br />合成 LiDAR · 8–19 s · 5 Hz · 1×</td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/dropout.gif" alt="感知超时后制动停车，输入恢复后重新起步" /></a><br /><b>感知超时 → 停车与恢复</b><br />合成 LiDAR · 3–10 s · 5 Hz · 1×</td>
+</tr>
+</table>
+
+五段 GIF 均来自已发布的运行记录，未插值运动或平滑控制。曲线只画到当前时刻；末尾有 1.2 秒循环提示。它们是选取的片段，不能代替完整测试或作为实时性证明。[可停止的 GIF 展区 ↗](https://ayane225.github.io/Auto-Driver/#driving-gifs) · [逐帧来源与哈希](docs/assets/driving/gifs/index.json) · [导出与评估范围](docs/driving_gifs.md)
 
 合成点云未模拟光线遮挡；CARLA 测试限定在无路口单车道，红绿灯与绕障目前在合成闭环中验证。
 

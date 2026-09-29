@@ -13,6 +13,10 @@ async function main() {
     });
     const page = await context.newPage(),
       errors = [];
+    const gifRequests = [];
+    page.on("request", (r) => {
+      if (/\/driving\/gifs\/.*\.gif$/.test(r.url())) gifRequests.push(r.url());
+    });
     page.on("pageerror", (e) => errors.push(String(e)));
     page.on("response", (r) => {
       if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`);
@@ -50,6 +54,77 @@ async function main() {
       });
     };
     await page.goto(base, { waitUntil: "networkidle" });
+    // A gallery should not download every animation on page load. Playback is
+    // explicit, stoppable, and only one card can animate at a time.
+    assert.equal(gifRequests.length, 0);
+    const gifIndex = await json("assets/driving/gifs/index.json");
+    assert.equal(gifIndex.clips.length, 5);
+    assert.equal(await page.locator("[data-driving-gif]").count(), 5);
+    for (const clip of gifIndex.clips) {
+      const asset = await (
+        await get(`assets/driving/gifs/${clip.file}`)
+      ).body();
+      assert.equal(asset.length, clip.bytes);
+      assert.equal(
+        crypto.createHash("sha256").update(asset).digest("hex"),
+        clip.sha256,
+      );
+      assert.equal(asset.subarray(0, 6).toString(), "GIF89a");
+      assert.deepEqual(
+        [asset.readUInt16LE(6), asset.readUInt16LE(8)],
+        clip.size_px,
+      );
+      const source = await (
+        await get(clip.source.replace(/^docs\//, ""))
+      ).body();
+      assert.equal(
+        crypto.createHash("sha256").update(source).digest("hex"),
+        clip.source_sha256,
+      );
+      const report = JSON.parse(source);
+      assert.deepEqual(clip.metrics, report.metrics);
+      assert.deepEqual(
+        clip.source_frame_indices.map((i) => report.frames[i].time_s),
+        clip.source_times_s,
+      );
+      assert.equal(clip.interpolation, "none");
+      assert.equal(clip.playback_rate, 1);
+      assert.equal(
+        clip.frame_durations_ms.length,
+        clip.source_frame_indices.length + 1,
+      );
+      assert.equal(clip.frame_durations_ms.at(-1), 1200);
+    }
+    const gifCards = page.locator("[data-driving-gif]");
+    const firstGif = gifCards.nth(0),
+      secondGif = gifCards.nth(1);
+    await firstGif.locator("button").click();
+    await page.waitForFunction(() => {
+      const img = document.querySelector("[data-driving-gif] img");
+      return (
+        img.src.endsWith(".gif") && img.complete && img.naturalWidth === 1000
+      );
+    });
+    assert.equal(
+      await firstGif.locator("button").getAttribute("aria-pressed"),
+      "true",
+    );
+    await secondGif.locator("button").click();
+    assert.equal(
+      await firstGif.locator("button").getAttribute("aria-pressed"),
+      "false",
+    );
+    assert.equal(
+      await page
+        .locator('[data-driving-gif] button[aria-pressed="true"]')
+        .count(),
+      1,
+    );
+    await secondGif.locator("button").click();
+    assert.ok(
+      (await secondGif.locator("img").getAttribute("src")).endsWith(".jpg"),
+    );
+    await shot("driving-gifs", "#driving-gifs");
     await page.locator("#pointcloud").scrollIntoViewIfNeeded();
     await ready("urban", 120);
     for (const scene of ["urban", "highway"]) {
@@ -324,7 +399,7 @@ async function main() {
     );
 
     console.log(
-      "PASS: 42 dense point files and hashes; 3D views, input controls, camera synchronization, download, density fallback; stage timings, assignment examples, gallery video, mobile layouts.",
+      "PASS: 5 GIF excerpts, source hashes, frame provenance and playback controls; 42 dense point files and hashes; 3D views, input controls, camera synchronization, download, density fallback; stage timings, assignment examples, gallery video, mobile layouts.",
     );
   } finally {
     await browser.close();

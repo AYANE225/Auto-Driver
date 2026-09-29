@@ -34,7 +34,9 @@ previous configuration. The association examples are educational matrices, separ
 
 The viewer supports interpolated or recorded-sample playback, an ego-following view, zoom, frame stepping, event navigation, PNG export and clickable speed / acceleration / steering plots. CARLA camera videos retain their newly recorded 10 Hz sampling, with synchronized speed, throttle and brake readings.
 
-[![Motion planning and vehicle feedback](docs/assets/driving_preview.jpg)](https://ayane225.github.io/Auto-Driver/#driving)
+[![CARLA lead braking: camera, measured/reference speed and pedal commands](docs/assets/driving/gifs/carla_lead_braking.gif)](https://ayane225.github.io/Auto-Driver/#driving-gifs)
+
+**CARLA lead braking · 4–11 s · LiDAR input · recorded 10 Hz · 1× simulation time.** The lead vehicle applies full braking at 6 s. All pedal changes are retained. [Full video and plots ↗](https://ayane225.github.io/Auto-Driver/#carla-driving)
 
 A* route search, quintic lateral candidates, timed oriented-box collision checks,
 time-headway following, curve speed limits, stop lines, Pure Pursuit steering,
@@ -49,7 +51,18 @@ its goal after **70.82 m**; an actual 64-channel LiDAR run stopped before a park
 after **32.62 m**. A third actual-LiDAR run handles a moving lead vehicle braking at 6 s. All three recorded zero collision and lane-invasion events, zero cruise pedal reversals and no restarts after stopping. These are
 bounded, junction-free single-lane tests; synthetic LiDAR does not model ray occlusion.
 
-[![Actual LiDAR lead-vehicle braking and synchronized control plots](docs/assets/driving_control_preview.jpg)](https://ayane225.github.io/Auto-Driver/#carla-driving)
+<table>
+<tr>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/cut_in.gif" alt="Synthetic LiDAR cut-in with recorded speed and acceleration commands" /></a><br /><b>Lane cut-in → following</b><br />Synthetic LiDAR · 2–10 s · 5 Hz · 1×</td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/obstacle.gif" alt="Synthetic LiDAR obstacle avoidance with planned and driven paths" /></a><br /><b>Obstacle avoidance → path tracking</b><br />Synthetic LiDAR · 2–9 s · 5 Hz · 1×</td>
+</tr>
+<tr>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/signal_crossing.gif" alt="Yielding to two pedestrians after the light turns green" /></a><br /><b>Green light → continued pedestrian yielding</b><br />Synthetic LiDAR · 8–19 s · 5 Hz · 1×</td>
+<td width="50%"><a href="https://ayane225.github.io/Auto-Driver/#driving-gifs"><img src="docs/assets/driving/gifs/dropout.gif" alt="Braking during input timeout and restarting after recovery" /></a><br /><b>Input timeout → stop and recovery</b><br />Synthetic LiDAR · 3–10 s · 5 Hz · 1×</td>
+</tr>
+</table>
+
+These excerpts use published records without motion interpolation or control smoothing. Plots reveal history only, with a 1.2 s notice before looping. Selected clips do not establish a success rate or processing throughput. [Stoppable GIF gallery ↗](https://ayane225.github.io/Auto-Driver/#driving-gifs) · [Frame provenance and hashes](docs/assets/driving/gifs/index.json) · [Export and scope](docs/driving_gifs.md)
 
 [Interactive driving replay](https://ayane225.github.io/Auto-Driver/#driving) ·
 [CARLA videos](https://ayane225.github.io/Auto-Driver/#carla-driving) ·

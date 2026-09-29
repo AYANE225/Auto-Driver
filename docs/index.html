@@ -25,12 +25,14 @@
     <link rel="stylesheet" href="assets/site.css" />
     <link rel="stylesheet" href="assets/showcase.css" />
     <link rel="stylesheet" href="assets/driving.css" />
+    <link rel="stylesheet" href="assets/gif-gallery.css" />
     <script src="assets/site.js" defer></script>
     <script src="assets/tracking.js" defer></script>
     <script src="assets/explorers.js" defer></script>
     <script src="assets/showcase.js" defer></script>
     <script src="assets/driving-replay.js" defer></script>
     <script src="assets/driving.js" defer></script>
+    <script src="assets/gif-gallery.js" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">跳转到主要内容</a>
@@ -321,6 +323,7 @@
           使用表面采样点云、真实聚类检测、跟踪与预测，但没有光线遮挡模型。规划器只使用当前观测和预测；障碍真值仅用于评分与显示。灰色候选为可行、橙色为被约束拒绝，不代表最终执行。碰撞检查、场景范围与耗时定义见完整报告。
         </p>
         <div class="driving-report-links">
+          <a href="#driving-gifs">五段驾驶 GIF ↗</a>
           <a href="assets/driving/index.json">26 次运行的指标与数据哈希 ↗</a
           ><a
             href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/planning_control_zh.md"
@@ -575,6 +578,173 @@
         </div>
         <p class="fine-print">
           这三次测试限定在无路口的单车道路线，记录碰撞、压线、巡航踏板切换和停车后再起步；没有验证城市交通全场景。转向映射针对测试车辆固定了转向比例曲线。视频时长是仿真时间，不代表计算实时性；红绿灯停车与绕障目前在上方合成闭环场景中验证。
+        </p>
+      </section>
+      <section class="section wrap" id="driving-gifs">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">GIF / 驾驶记录节选</p>
+            <h2>看见动作，也看见对应的控制变化。</h2>
+          </div>
+          <p>
+            五段原始记录，统一显示时间与读数。<br />点击播放，可停止、下载或核对完整数据。
+          </p>
+        </div>
+        <div class="gif-grid">
+          <article
+            class="gif-card"
+            data-driving-gif="assets/driving/gifs/carla_lead_braking.gif"
+            data-poster="assets/driving/gifs/carla_lead_braking.jpg"
+          >
+            <img
+              src="assets/driving/gifs/carla_lead_braking.jpg"
+              width="1000"
+              height="600"
+              loading="lazy"
+              alt="CARLA 前车急刹：自车相机与速度、油门、制动曲线同步显示"
+            />
+            <div>
+              <h3>01 · CARLA 前车急刹</h3>
+              <p>
+                4–11 s · 实际 LiDAR 输入 · 原始 10 Hz。前车在 6 s
+                全制动；自车相机、实测与参考速度、踏板指令逐帧对应。
+              </p>
+              <div class="gif-actions">
+                <button type="button" aria-pressed="false" hidden>
+                  播放 GIF</button
+                ><a href="assets/driving/gifs/carla_lead_braking.gif" download
+                  >下载 GIF</a
+                ><a href="assets/driving/carla_lead_braking.json"
+                  >完整记录 JSON ↗</a
+                ><a href="#carla-driving">完整视频与曲线 ↗</a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="gif-card"
+            data-driving-gif="assets/driving/gifs/cut_in.gif"
+            data-poster="assets/driving/gifs/cut_in.jpg"
+          >
+            <img
+              src="assets/driving/gifs/cut_in.jpg"
+              width="1000"
+              height="600"
+              loading="lazy"
+              alt="合成 LiDAR 邻道切入：车辆进入自车前方，自车减速并进入跟车状态"
+            />
+            <div>
+              <h3>02 · 邻道切入与跟车</h3>
+              <p>
+                2–10 s · 合成 LiDAR · 原始 5
+                Hz。保留切入过程中的加减速变化，观察状态切换与后续跟车。
+              </p>
+              <div class="gif-actions">
+                <button type="button" aria-pressed="false" hidden>
+                  播放 GIF</button
+                ><a href="assets/driving/gifs/cut_in.gif" download>下载 GIF</a
+                ><a href="assets/driving/lidar/cut_in.json">完整记录 JSON ↗</a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="gif-card"
+            data-driving-gif="assets/driving/gifs/obstacle.gif"
+            data-poster="assets/driving/gifs/obstacle.jpg"
+          >
+            <img
+              src="assets/driving/gifs/obstacle.jpg"
+              width="1000"
+              height="600"
+              loading="lazy"
+              alt="合成 LiDAR 静态绕障：当前规划轨迹与已经行驶的轨迹分色显示"
+            />
+            <div>
+              <h3>03 · 静态绕障与轨迹跟踪</h3>
+              <p>
+                2–9 s · 合成 LiDAR · 原始 5
+                Hz。等比例俯视图同时显示障碍真值、检测跟踪框、当前规划与已行驶轨迹。
+              </p>
+              <div class="gif-actions">
+                <button type="button" aria-pressed="false" hidden>
+                  播放 GIF</button
+                ><a href="assets/driving/gifs/obstacle.gif" download>下载 GIF</a
+                ><a href="assets/driving/lidar/obstacle.json"
+                  >完整记录 JSON ↗</a
+                >
+              </div>
+            </div>
+          </article>
+          <article
+            class="gif-card"
+            data-driving-gif="assets/driving/gifs/signal_crossing.gif"
+            data-poster="assets/driving/gifs/signal_crossing.jpg"
+          >
+            <img
+              src="assets/driving/gifs/signal_crossing.jpg"
+              width="1000"
+              height="600"
+              loading="lazy"
+              alt="合成 LiDAR 绿灯与连续行人横穿：绿灯后仍以低速让行，随后恢复巡航"
+            />
+            <div>
+              <h3>04 · 绿灯后连续行人横穿</h3>
+              <p>
+                8–19 s · 合成 LiDAR · 原始 5
+                Hz。绿灯后继续低速让行，经过两名横穿行人后恢复巡航。
+              </p>
+              <div class="gif-actions">
+                <button type="button" aria-pressed="false" hidden>
+                  播放 GIF</button
+                ><a href="assets/driving/gifs/signal_crossing.gif" download
+                  >下载 GIF</a
+                ><a href="assets/driving/lidar/signal_crossing.json"
+                  >完整记录 JSON ↗</a
+                >
+              </div>
+            </div>
+          </article>
+          <article
+            class="gif-card"
+            data-driving-gif="assets/driving/gifs/dropout.gif"
+            data-poster="assets/driving/gifs/dropout.jpg"
+          >
+            <img
+              src="assets/driving/gifs/dropout.jpg"
+              width="1000"
+              height="600"
+              loading="lazy"
+              alt="合成 LiDAR 感知超时：紧急制动停车、保持停止，输入恢复后重新起步"
+            />
+            <div>
+              <h3>05 · 感知超时与恢复</h3>
+              <p>
+                3–10 s · 合成 LiDAR · 原始 5
+                Hz。超时状态下制动并保持停车，输入恢复后重新起步；可核对 −7 m/s²
+                制动指令。
+              </p>
+              <div class="gif-actions">
+                <button type="button" aria-pressed="false" hidden>
+                  播放 GIF</button
+                ><a href="assets/driving/gifs/dropout.gif" download>下载 GIF</a
+                ><a href="assets/driving/lidar/dropout.json"
+                  >完整记录 JSON ↗</a
+                >
+              </div>
+            </div>
+          </article>
+        </div>
+        <p class="fine-print">
+          均按 1× 仿真时间播放，无运动插值或控制平滑；末尾增加 1.2 s
+          回放提示。GIF
+          为选取的片段，不能据此推算成功率或计算实时性。合成场景未模拟光线遮挡，CARLA
+          记录为无路口低速测试。<a href="assets/driving/gifs/index.json"
+            >片段时间、源文件与 GIF 哈希 ↗</a
+          >
+          ·
+          <a
+            href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/driving_gifs.md"
+            >导出方法与完整说明 ↗</a
+          >
         </p>
       </section>
       <section class="section wrap" id="pointcloud">
