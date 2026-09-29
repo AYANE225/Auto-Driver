@@ -4,7 +4,7 @@ Auto-Driver 已增加规划与控制模块，复用既有检测、跟踪和预�
 这里的结果来自实际执行的 Python 闭环程序和 CARLA 客户端；网页只回放导出记录。
 
 [交互回放](https://ayane225.github.io/Auto-Driver/#driving) ·
-[20 次合成运行指标与哈希](assets/driving/index.json) ·
+[26 次合成运行指标与哈希](assets/driving/index.json) ·
 [CARLA 真值输入](assets/driving/carla_gt.json) · [CARLA LiDAR 输入](assets/driving/carla_lidar.json)
 
 ## 已实现的功能
@@ -56,7 +56,7 @@ command = controller.command(state, plan, dt=0.1)
 
 固定种子 2026，规划与控制周期 0.1 秒；自行车模型按 0.02 秒步长推进并检查实际碰撞。
 每轮观测根据控制后的自车位姿重新生成，规划器不读取场景未来真值。
-全部运行在本机 CPU 上完成，Python 3.12；公开指标中的规划加控制 p95 为 **6.1–11.0 ms**，
+全部运行在本机 CPU 上完成，Python 3.12；公开指标中的规划加控制 p95 为 **6.3–13.3 ms**，
 不含感知、场景生成、动力学、评分或渲染，也没有把它作为完整系统实时性的结论。
 
 | 场景 | 验收目标 | 真值检测 | 合成 LiDAR |
@@ -71,10 +71,13 @@ command = controller.command(state, plan, dt=0.1)
 | 突现障碍 | 展示紧急制动并持续停车 | 通过 | 通过 |
 | 感知超时 | 展示超时制动、恢复后到达 | 通过 | 通过 |
 | 封路重选路线 | 避开封闭图边并到达 | 通过 | 通过 |
+| 前车急刹 | 前车先以 4 m/s 行驶，第 5 秒开始制动，自车跟随并停车 | 通过 | 通过 |
+| 邻道切入 | 车辆在 2.5 秒内平滑切入，自车减速跟随并到达 | 通过 | 通过 |
+| 绿灯与连续横穿 | 第 10 秒绿灯后，仍对两名横穿行人让行并到达 | 通过 | 通过 |
 
 所有场景还要求无实际矩形碰撞采样、无道路边界越界采样、无红灯越线采样。
 到达条件为路线剩余距离和二维终点距离均小于 0.7 米、速度小于 0.2 m/s。
-十场景两种输入共 **20/20** 通过，不代表对未测场景的成功率估计。
+十三场景两种输入共 **26/26** 通过，不代表对未测场景的成功率估计。
 规划候选会主动减速或被拒绝；报告保留紧急制动状态，不能据通过结果宣称所有过程都平顺。
 
 两种输入必须区分：
@@ -87,21 +90,52 @@ command = controller.command(state, plan, dt=0.1)
 `max_lateral_offset_m` 是相对路线中心的最大偏移，包含有意绕障，不能全当作控制误差。
 离散碰撞与恒速/恒转弯预测存在局限；参考道路范围由场景定义，不包含现实道路通行权限推断。
 
+### 复杂交互的参数变化
+
+在三个新增场景上逐项改变条件，真值检测和合成 LiDAR 各执行 9 次，共 **18/18** 通过：
+
+- 前车初始中心位置：16 / 20 / 24 m；自车后轴起点为 0 m。
+- 切入时长：1.5 / 2.5 / 3.5 s；起始横向位置为 3.4 m。
+- 绿灯时刻：8 / 10 / 12 s；两名行人的轨迹保持相同。
+
+固定种子为 2026，包含默认参数的重复运行，不能当作 18 个独立随机样本。
+[逐项结果、参数及哈希](assets/driving/interactions/index.json)链接到可下载的完整 gzip JSON 记录。
+所有运行零碰撞、零道路越界、零红灯越线；最小分离轴间隙最低约 0.565 m，不能据此推断未测条件的安全裕度。
+
+```bash
+python tools/eval_driving.py --out outputs/driving-interactions --assert-success
+```
+
 ## CARLA 0.9.16 实际车辆控制
 
 在 Town10HD_Opt 第 6 个生成位置选择前方无路口车道，使用 Tesla Model 3。
 轮距和车体尺寸来自 CARLA；为使前轮角与控制输入一致，固定自车转向比例曲线。
-输出油门/制动使用简单加速度到执行器的映射，尚未经过多车型标定。
+纵向执行器使用速度 PI 反馈、阻力与加速度前馈、抗积分饱和、踏板滞回和变化率限制。
+在 Model 3 低速区间，移动参考优先滑行，终点保持与紧急制动直接生效。参数仅在当前低速仿真车辆上验证，未做多车型标定。
 
 | 测试 | 结果 | 最大路线横向偏移 | 碰撞 / 压线事件 |
 |---|---|---:|---:|
-| 当前目标真值输入，沿车道到达 | 行驶约 61.08 m，30.8 s，到达并停车 | 0.299 m | 0 / 0 |
-| 实际 64 线 LiDAR，前方停放车辆 | 行驶约 27.71 m，15.8 s，制动后保持停车 | 0.159 m | 0 / 0 |
+| 当前目标真值输入，沿车道到达 | 行驶约 70.82 m，22.2 s，到达并保持停车 | 0.061 m | 0 / 0 |
+| 实际 64 线 LiDAR，前方停放车辆 | 行驶约 32.62 m，18.9 s，制动后保持停车 | 0.059 m | 0 / 0 |
+| 实际 64 线 LiDAR，前车行驶后全制动 | 行驶约 26.54 m，13.7 s，前车第 6 秒制动，自车随后停车 | 0.056 m | 0 / 0 |
 
-第二项执行真实 CARLA LiDAR → 聚类检测 → 跟踪 → 预测 → 规划 → 控制。
-评分使用 CARLA 碰撞和压线传感器，视频来自自车前视相机，每 0.2 秒保存一张图。
-这两项是限定路线的接入验证；合成场景中的绕障、横穿行人、红绿灯和重选路线
+后两项执行真实 CARLA LiDAR → 聚类检测 → 跟踪 → 预测 → 规划 → 控制。
+评分使用 CARLA 碰撞和压线传感器，视频来自自车前视相机，每 0.1 秒保存一张图。
+这三项是限定路线的接入验证；合成场景中的绕障、横穿行人、红绿灯和重选路线
 尚未在 CARLA 城市交通中全面验证。现有 ROS 2 节点仍发布感知结果，尚未接入规划控制消息。
+
+### 纵向控制修正与验收
+
+原实现用实测加速度作为每次指令的 jerk 限幅中心，极端实测减速度会把正常指令带到 −3 m/s² 硬限制之外；
+只跟踪重规划的第一个速度点，还会反复延续当前加速趋势。现在以相邻输出指令限制 jerk，重新应用硬边界，
+并使用 0.5 秒预瞄跟踪计划。CARLA 规划输入的加速度采用时间常数约 0.3 秒的一阶滤波，报告另存未截断实测值。
+终点参考速度随剩余距离衰减，避免低速刹停后反复补油。
+
+三次发布运行的巡航踏板反向切换、异常巡航停车、停后再起步、正常加速度越界均为 **0**。
+巡航测试的速度 RMSE 为 **0.102 m/s**（首次达到目标速度 90% 后，仅统计 `cruise` 状态）。
+全程踏板反向切换为 1 / 5 / 3 次，包含停车、让行过程；没有把这些真实变化平滑掉。
+动态前车测试的最小分离轴间隙约 **0.693 m**，说明该测试通过，但车距余量仍有限。
+[控制修复与验证记录](control_validation_2026-09-29.md)给出指标定义和原始运行位置。
 
 ## 复现与导出
 
@@ -113,8 +147,9 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python tools/run_driving.py \
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python tools/run_driving.py \
   --scenario all --detector lidar --out outputs/driving-lidar --assert-success
 python -m pytest src/perception_core/tests/test_planning.py
+python tools/eval_driving.py --out outputs/driving-interactions --assert-success
 python tools/export_driving.py --gt outputs/driving-gt --lidar outputs/driving-lidar \
-  --out outputs/driving-web
+  --interactions outputs/driving-interactions --out outputs/driving-web
 ```
 
 各输出目录必须是新目录。完整记录保留全精度浮点数，网页回放保留四位小数，
@@ -127,12 +162,12 @@ python tools/export_driving.py --gt outputs/driving-gt --lidar outputs/driving-l
 - 规划轨迹、跟踪框、控制指令、信号和评估结果保持原始记录。仅在当前单目标合成场景中插值相邻真值框的位置；突然出现的目标不会提前显示，多目标数组不按序号关联。
 - 全局路线和跟随车辆两种视角共用世界坐标方向，可缩放、保存 PNG。候选轨迹默认关闭，按需开启。
 - 事件按钮按记录中的状态、灯色、目标出现和停车时刻生成；点击曲线可定位，支持速度、加速度指令、转向指令三种曲线。
-- 暂停再继续保持当前位置；离开页面或隐藏标签页时暂停。CARLA 视频保留 5 Hz 原始采样，同步显示对应相机帧的速度、油门和制动。
+- 暂停再继续保持当前位置；离开页面或隐藏标签页时暂停。CARLA 视频使用重新录制的 10 Hz 原始采样，同步显示对应相机帧的速度、油门和制动。
 
 在仓库根目录运行 `python tools/serve_website.py`，打开 `http://127.0.0.1:8765/` 可本地预览。
 此服务器支持视频拖动所需的 HTTP 字节范围请求；`python -m http.server` 不支持该功能。
 
-这些插值只改善浏览器显示，不增加实际传感器采样，也不改变规划结果。20 次闭环运行的源报告、公开报告哈希和指标保持不变。
+这些插值只改善浏览器显示，不增加实际传感器采样，也不改变规划结果。本轮控制修正后重新执行了全部场景，并更新源报告、公开报告哈希和指标。
 
 CARLA 测试需匹配的客户端、Pillow、独立服务器：
 
@@ -142,12 +177,16 @@ python carla/run_driving.py --port 2100 --detector gt --images \
   --out outputs/carla-cruise --assert-success
 python carla/run_driving.py --port 2100 --scenario obstacle --detector lidar --images \
   --out outputs/carla-obstacle --assert-success
+python carla/run_driving.py --port 2100 --scenario lead_braking --detector lidar --images \
+  --out outputs/carla-lead-braking --assert-success
 python tools/export_carla_driving.py --dataset outputs/carla-cruise --name gt \
   --out outputs/carla-cruise-web
 python tools/export_carla_driving.py --dataset outputs/carla-obstacle --name lidar \
   --out outputs/carla-obstacle-web
+python tools/export_carla_driving.py --dataset outputs/carla-lead-braking --name lead_braking \
+  --out outputs/carla-lead-braking-web
 ```
 
-不启动 CARLA 也能运行全部十个合成场景。发布视频保留采样时序，报告保存每张源相机图像和视频的哈希。
+不启动 CARLA 也能运行全部十三个合成场景。发布视频保留采样时序，报告保存每张源相机图像和视频的哈希。
 新增单元测试覆盖路线方向与封路、旋转矩形、过期输入、异常目标、框朝向、停车不倒车、终点附近起步，
-并执行全部十个闭环验收场景；网页测试另检查20份回放、控制数据显示、播放、下载、异步切换和移动布局。
+并执行全部十三个闭环验收场景；网页测试另检查26份回放、控制数据显示、播放、下载、异步切换和移动布局。

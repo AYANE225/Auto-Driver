@@ -26,6 +26,7 @@ class PlannerConfig:
     max_observation_age: float = 0.35
     time_headway: float = 1.5
     standstill_gap: float = 2.0
+    stop_speed_gain: float = 1.0  # 1/s: speed cap per metre to the stopping position
 
     def __post_init__(self):
         values = [
@@ -36,6 +37,7 @@ class PlannerConfig:
             self.max_observation_age,
             self.time_headway,
             self.standstill_gap,
+            self.stop_speed_gain,
         ]
         if not np.isfinite(values).all() or min(values) <= 0 or self.horizon < self.step:
             raise ValueError("planning time, speed and road limits must be positive")
@@ -192,7 +194,12 @@ class LocalPlanner:
                 speed = np.zeros(len(self.times))
                 acceleration = np.zeros(len(self.times))
                 travel = np.zeros(len(self.times))
-                speed[0], acceleration[0] = state.speed, state.acceleration
+                speed[0] = state.speed
+                # Future normal commands must remain inside their hard bounds,
+                # even when the measured plant acceleration exceeds them.
+                acceleration[0] = np.clip(
+                    state.acceleration, -vehicle.comfortable_brake, vehicle.max_accel
+                )
                 target_speed = cruise * fraction
                 following = False
                 for i, dt in enumerate(np.diff(self.times), 1):
@@ -204,7 +211,7 @@ class LocalPlanner:
                         target_speed,
                         np.sqrt(vehicle.max_lateral_accel / max(0.001, kappa)),
                         np.sqrt(vehicle.comfortable_brake * distance_left),
-                        distance_left,
+                        cfg.stop_speed_gain * distance_left,
                     )
                     position = np.array(
                         [np.interp(travel[i - 1], path_s, path_xy[:, k]) for k in range(2)]

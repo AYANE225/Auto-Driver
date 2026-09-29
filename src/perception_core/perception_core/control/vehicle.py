@@ -8,6 +8,8 @@ from perception_core.planning.types import ControlCommand, VehicleConfig, Vehicl
 class PathController:
     def __init__(self, vehicle=None):
         self.vehicle = vehicle or VehicleConfig()
+        self._previous_acceleration = None
+        self._timestamp = None
 
     def command(self, state, plan, dt):
         if not np.isfinite(dt) or dt <= 0:
@@ -19,6 +21,8 @@ class PathController:
             or state.timestamp - plan.timestamp > 0.5
             or plan.timestamp > state.timestamp + 1e-6
         ):
+            self._previous_acceleration = -cfg.emergency_brake
+            self._timestamp = state.timestamp
             return ControlCommand(state.steering, -cfg.emergency_brake, True)
         path = plan.path_xy
         nearest = int(np.argmin(np.sum((path - [state.x, state.y]) ** 2, axis=1)))
@@ -35,14 +39,26 @@ class PathController:
             state.steering + cfg.max_steer_rate * dt,
         )
         # Track the near-future speed with acceleration feed-forward.
-        speed = float(np.interp(dt, plan.times, plan.speed))
-        accel = float(np.interp(dt, plan.times, plan.acceleration)) + 1.5 * (speed - state.speed)
+        # Preview beyond the first jerk-limited sample. Tracking only that
+        # sample repeatedly can perpetuate measured acceleration even after
+        # the vehicle has exceeded the planned cruising speed.
+        preview = max(dt, 0.5)
+        speed = float(np.interp(preview, plan.times, plan.speed))
+        accel = float(np.interp(preview, plan.times, plan.acceleration)) + 1.5 * (speed - state.speed)
         accel = np.clip(accel, -cfg.comfortable_brake, cfg.max_accel)
-        accel = np.clip(
-            accel, state.acceleration - cfg.max_jerk * dt, state.acceleration + cfg.max_jerk * dt
-        )
+        # Limit consecutive commands, not noisy measured acceleration. Seeding
+        # this limiter with an emergency-level measurement can otherwise force
+        # a normal command outside [-comfortable_brake, max_accel].
+        previous = self._previous_acceleration
+        if self._timestamp is None or not 0 <= state.timestamp - self._timestamp <= 0.5:
+            previous = state.acceleration
+        previous = np.clip(previous, -cfg.comfortable_brake, cfg.max_accel)
+        accel = np.clip(accel, previous - cfg.max_jerk * dt, previous + cfg.max_jerk * dt)
+        accel = np.clip(accel, -cfg.comfortable_brake, cfg.max_accel)
         if plan.status == "goal_reached":
             accel = -cfg.comfortable_brake
+        self._previous_acceleration = float(accel)
+        self._timestamp = state.timestamp
         return ControlCommand(float(steer), float(accel))
 
 

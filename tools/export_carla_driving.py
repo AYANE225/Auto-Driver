@@ -11,7 +11,7 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, required=True)
-    parser.add_argument("--name", choices=["gt", "lidar"], required=True)
+    parser.add_argument("--name", choices=["gt", "lidar", "lead_braking"], required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.out.exists():

@@ -548,14 +548,23 @@
       playTime = report.frames[0].time_s;
       el("driving-save").disabled = false;
       el("driving-events").replaceChildren(
-        ...DrivingReplay.events(report.frames, statuses).map((event) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.dataset.index = String(event.index);
-          button.textContent = `${event.time.toFixed(1)} s · ${event.label}`;
-          button.addEventListener("click", () => seek(event.index));
-          return button;
-        }),
+        ...[
+          ...DrivingReplay.events(report.frames, statuses),
+          ...(report.events || []).map((event) => ({
+            time: event.time_s,
+            label: event.label,
+            index: DrivingReplay.frameIndex(report.frames, event.time_s),
+          })),
+        ]
+          .sort((a, b) => a.time - b.time)
+          .map((event) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.dataset.index = String(event.index);
+            button.textContent = `${event.time.toFixed(1)} s · ${event.label}`;
+            button.addEventListener("click", () => seek(event.index));
+            return button;
+          }),
       );
       slider.max = String(report.frames.length - 1);
       slider.disabled = false;
@@ -649,13 +658,109 @@
 })();
 
 // Match actuator feedback to the camera sample actually presented by the video.
-for (const mode of ["gt", "lidar"]) {
+for (const mode of ["gt", "lidar", "lead_braking"]) {
   const video = document.getElementById(`driving-carla-${mode}-video`),
-    panel = document.getElementById(`driving-carla-${mode}-telemetry`);
+    panel = document.getElementById(`driving-carla-${mode}-telemetry`),
+    chart = document.getElementById(`driving-carla-${mode}-chart`);
   let report,
     pending,
     callback = 0;
   const value = (name) => panel.querySelector(`[data-value="${name}"]`);
+  function drawControls(time = video.currentTime) {
+    if (!report || !chart.clientWidth) return;
+    const w = chart.clientWidth,
+      h = 180,
+      dpr = Math.min(devicePixelRatio || 1, 2);
+    chart.width = Math.round(w * dpr);
+    chart.height = Math.round(h * dpr);
+    const ctx = chart.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = "#0b1520";
+    ctx.fillRect(0, 0, w, h);
+    const frames = report.frames,
+      duration = report.video.duration_s,
+      x = (t) => 30 + ((w - 40) * t) / duration,
+      maxSpeed = Math.max(6, ...frames.map((f) => f.ego.speed));
+    ctx.font = "10px sans-serif";
+    ctx.fillStyle = "#a8bbc8";
+    ctx.fillText("m/s", 3, 14);
+    ctx.fillText("100%", 0, 113);
+    ctx.fillText("0", 17, 163);
+    ctx.fillText("0 s", 30, 177);
+    ctx.fillText(`${duration.toFixed(1)} s`, w - 44, 177);
+    const line = (field, color, y, dash = []) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      frames.forEach((f, i) => {
+        const px = x(f.video_time_s),
+          py = y(field(f));
+        if (i) ctx.lineTo(px, py);
+        else ctx.moveTo(px, py);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+    const speedY = (v) => 90 - (70 * v) / maxSpeed,
+      pedalY = (v) => 160 - 48 * v;
+    line((f) => f.ego.speed, "#72dfbf", speedY);
+    line((f) => f.target_speed_mps, "#8eaeef", speedY, [4, 3]);
+    line((f) => f.command.throttle, "#e4c779", pedalY);
+    line((f) => f.command.brake, "#ef8a7d", pedalY);
+    for (const event of report.events || []) {
+      const px = x(event.time_s - report.frames[0].time_s);
+      ctx.strokeStyle = "#ef8a7d";
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(px, 16);
+      ctx.lineTo(px, 160);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#ef8a7d";
+      ctx.fillText(
+        `${event.time_s.toFixed(0)} s 前车制动`,
+        Math.min(px + 4, w - 94),
+        105,
+      );
+    }
+    ctx.strokeStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(x(time), 15);
+    ctx.lineTo(x(time), 163);
+    ctx.stroke();
+  }
+  chart.addEventListener("click", async (event) => {
+    await load();
+    if (!report) return;
+    video.currentTime = Math.max(
+      0,
+      Math.min(
+        report.video.duration_s - 0.01,
+        ((event.offsetX - 30) / (chart.clientWidth - 40)) *
+          report.video.duration_s,
+      ),
+    );
+  });
+  chart.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || !report) return;
+    event.preventDefault();
+    video.currentTime = Math.max(
+      0,
+      Math.min(
+        report.video.duration_s - 0.01,
+        video.currentTime + (event.key === "ArrowRight" ? 0.1 : -0.1),
+      ),
+    );
+  });
+  new ResizeObserver(() => drawControls()).observe(chart);
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      load();
+      observer.disconnect();
+    }
+  });
+  observer.observe(panel);
   function show(time) {
     if (!report) return;
     // CARLA float32 timestamps differ slightly from encoded video PTS.
@@ -677,11 +782,13 @@ for (const mode of ["gt", "lidar"]) {
         goal_approach: "减速接近终点",
         goal_reached: "到达并停车",
         yielding: "减速让行",
+        following: "保持跟车间距",
         emergency_stop: "紧急制动",
         stale_input: "观测超时制动",
       }[frame.status] || frame.status;
     value("time").textContent =
       `记录 ${frame.time_s.toFixed(1)} s · 转向 ${((frame.command.steering * 180) / Math.PI).toFixed(1)}° · 路线进度 ${frame.route_s.toFixed(1)} m`;
+    drawControls(time);
   }
   async function load() {
     if (report) return;
@@ -689,6 +796,10 @@ for (const mode of ["gt", "lidar"]) {
       pending = readReport(`assets/driving/carla_${mode}.json`)
         .then((data) => {
           report = data;
+          const m = report.metrics,
+            c = m.longitudinal;
+          document.getElementById(`driving-carla-${mode}-summary`).textContent =
+            `${m.distance_along_route_m.toFixed(1)} m / ${m.elapsed_simulation_s.toFixed(1)} s · 碰撞 ${m.collision_events} · 压线 ${m.lane_invasion_events} · 巡航踏板反向切换 ${c.cruise_pedal_reversals} 次 · 停后再起步 ${c.restarts_after_stop} 次`;
           show(video.currentTime);
         })
         .catch(() => {
@@ -726,3 +837,50 @@ for (const mode of ["gt", "lidar"]) {
     show(video.currentTime);
   });
 }
+
+document
+  .getElementById("driving-interactions")
+  .addEventListener("toggle", async (event) => {
+    const details = event.currentTarget;
+    if (!details.open || details.dataset.loaded) return;
+    try {
+      const data = await readReport("assets/driving/interactions/index.json");
+      document.getElementById("driving-interactions-summary").textContent =
+        `${data.passed}/${data.total} 次参数变化测试通过。固定种子，逐项改变条件；结果不代表未测试场景的成功率。`;
+      const labels = {
+        lead_initial_x_m: "前车初始位置 / m",
+        cut_in_duration_s: "切入时长 / s",
+        green_time_s: "绿灯时刻 / s",
+      };
+      document.getElementById("driving-interactions-body").replaceChildren(
+        ...data.runs.map((run) => {
+          const row = document.createElement("tr");
+          for (const text of [
+            run.title,
+            `${labels[run.parameter]}：${run.value}`,
+            run.detector === "gt" ? "真值" : "合成 LiDAR",
+          ]) {
+            const cell = document.createElement("td");
+            cell.textContent = text;
+            row.append(cell);
+          }
+          const result = document.createElement("td"),
+            link = document.createElement("a");
+          link.textContent = run.metrics.success
+            ? "通过 · JSON.gz"
+            : "未通过 · JSON.gz";
+          link.href = `assets/driving/interactions/${run.file}`;
+          result.append(link);
+          row.append(result);
+          const gap = document.createElement("td");
+          gap.textContent = `${run.metrics.min_separating_axis_gap_m.toFixed(2)} m`;
+          row.append(gap);
+          return row;
+        }),
+      );
+      details.dataset.loaded = "true";
+    } catch {
+      document.getElementById("driving-interactions-summary").textContent =
+        "加载失败，可关闭后重新展开或打开 JSON 汇总。";
+    }
+  });

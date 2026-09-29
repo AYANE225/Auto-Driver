@@ -43,6 +43,36 @@ class DrivingScenario:
     obstacle_appears: float = None
     expected: str = "goal"
     route_search: dict = None
+    events: list = field(default_factory=list)
+
+
+@dataclass
+class BrakingActor(Actor):
+    brake_time: float = 5.0
+    deceleration: float = 3.0
+
+    def pose_at(self, t):
+        braking = np.clip(t - self.brake_time, 0, self.speed / self.deceleration)
+        distance = self.speed * min(t, self.brake_time)
+        distance += self.speed * braking - 0.5 * self.deceleration * braking**2
+        return self.x + distance * np.cos(self.yaw), self.y + distance * np.sin(self.yaw), self.yaw
+
+
+@dataclass
+class LaneChangeActor(Actor):
+    change_time: float = 3.0
+    change_duration: float = 2.5
+    target_y: float = 0.0
+
+    def pose_at(self, t):
+        u = np.clip((t - self.change_time) / self.change_duration, 0, 1)
+        blend = 10 * u**3 - 15 * u**4 + 6 * u**5
+        lateral_speed = (self.target_y - self.y) * 30 * u**2 * (1 - u) ** 2 / self.change_duration
+        return (
+            self.x + self.speed * t,
+            self.y + (self.target_y - self.y) * blend,
+            float(np.arctan2(lateral_speed, self.speed)),
+        )
 
 
 def scenarios():
@@ -134,6 +164,42 @@ def scenarios():
                 "blocked_edges": blocked,
                 "selected_nodes": nodes,
             },
+        ),
+        "lead_braking": DrivingScenario(
+            "lead_braking",
+            "前车行驶后急刹",
+            straight,
+            [BrakingActor(20, 0, 0, 4, ObjectClass.CAR, 4.5, 1.9, 1.5)],
+            road_half_width=2.0,
+            duration=20,
+            expected="stopped",
+            events=[{"time_s": 5.0, "label": "前车开始以 3 m/s² 制动"}],
+        ),
+        "cut_in": DrivingScenario(
+            "cut_in",
+            "邻道车辆切入并跟车",
+            straight,
+            [LaneChangeActor(18, 3.4, 0, 3.5, ObjectClass.CAR, 4.5, 1.9, 1.5)],
+            road_half_width=2.0,
+            duration=36,
+            events=[
+                {"time_s": 3.0, "label": "邻道车辆开始切入"},
+                {"time_s": 5.5, "label": "切入完成，继续低速行驶"},
+            ],
+        ),
+        "signal_crossing": DrivingScenario(
+            "signal_crossing",
+            "绿灯起步后连续行人横穿",
+            straight,
+            [
+                Actor(39, -17, np.pi / 2, 1.4, ObjectClass.PEDESTRIAN, 0.7, 0.7, 1.75),
+                Actor(43, 22, -np.pi / 2, 1.4, ObjectClass.PEDESTRIAN, 0.7, 0.7, 1.75),
+            ],
+            road_half_width=2.0,
+            stop_s=30,
+            green_time=10,
+            duration=38,
+            events=[{"time_s": 10.0, "label": "绿灯亮起，仍需对横穿行人让行"}],
         ),
     }
 
@@ -304,6 +370,9 @@ def run_scenario(scenario, detector="gt", seed=2026, dt=0.1, record_every=2):
         "traffic_light": "stop_line",
         "emergency": "emergency_stop",
         "dropout": "stale_input",
+        "lead_braking": "following",
+        "cut_in": "following",
+        "signal_crossing": "stop_line",
     }
     demonstrated = scenario.name not in behavior_ok or behavior_ok[scenario.name] in states_seen
     success = bool(
@@ -350,6 +419,7 @@ def run_scenario(scenario, detector="gt", seed=2026, dt=0.1, record_every=2):
         "reference_path": route.xy[::4].tolist() + [route.xy[-1].tolist()],
         "stop_s": scenario.stop_s,
         "route_search": scenario.route_search,
+        "events": scenario.events,
         "metrics": metrics,
         "frames": records,
     }

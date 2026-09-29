@@ -22,8 +22,43 @@ from perception_core.planning import (
     VehicleState,
 )
 from perception_core.planning.collision import rectangle_separation, sample_obstacles
-from perception_core.planning.types import ControlCommand
+from perception_core.planning.types import ControlCommand, MotionPlan
 from perception_core.simulation.driving import observation, run_scenario, scenarios
+
+
+def test_normal_control_does_not_amplify_measured_braking():
+    times = np.arange(0, 1.1, 0.1)
+    xy = np.column_stack([5 * times, np.zeros(len(times))])
+    plan = MotionPlan(0, times, xy, times * 0, times * 0 + 5, times * 0, xy, "cruise")
+    controller = PathController()
+    assert controller.command(VehicleState(0, 0, 0, speed=5), plan, 0.1).acceleration == 0
+    for i, measured in enumerate([-7, 2, -9, 10], 1):
+        plan.timestamp = i * 0.1
+        state = VehicleState(0, 0, 0, speed=5, acceleration=measured, timestamp=i * 0.1)
+        command = controller.command(state, plan, 0.1)
+        assert not command.emergency
+        assert command.acceleration == 0
+
+
+@pytest.mark.parametrize("measured", [-9, -7, 5, 12])
+def test_normal_plan_and_control_obey_hard_acceleration_limits(measured):
+    state = VehicleState(0, 0, 0, speed=5, acceleration=measured)
+    plan = LocalPlanner(ReferencePath([[0, 0], [80, 0]])).plan(state, PerceptionOutput(0))
+    assert plan.feasible
+    assert np.all(plan.acceleration >= -3 - 1e-9)
+    assert np.all(plan.acceleration <= 2 + 1e-9)
+    command = PathController().command(state, plan, 0.1)
+    assert -3 <= command.acceleration <= 2
+
+
+def test_overspeed_control_does_not_perpetuate_measured_acceleration():
+    planner = LocalPlanner(ReferencePath([[0, 0], [100, 0]]), PlannerConfig(cruise_speed=5))
+    controller = PathController()
+    for i in range(10):
+        state = VehicleState(0, 0, 0, speed=6, acceleration=2, timestamp=i * 0.1)
+        plan = planner.plan(state, PerceptionOutput(state.timestamp))
+        command = controller.command(state, plan, 0.1)
+    assert command.acceleration < 0
 
 
 def test_astar_obeys_direction_and_blocked_edges():

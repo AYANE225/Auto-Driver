@@ -399,6 +399,35 @@
   color: var(--green);
   font-size: 12px;
 }
+.carla-control-plot canvas {
+  width: 100%;
+  height: 180px;
+  display: block;
+  cursor: crosshair;
+}
+.carla-control-plot .actual-speed {
+  color: #72dfbf;
+}
+.carla-control-plot .target-speed {
+  color: #8eaeef;
+}
+.carla-control-plot .throttle {
+  color: #e4c779;
+}
+.carla-control-plot .brake {
+  color: #ef8a7d;
+}
+.driving-videos article:last-child {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+}
+@media (max-width: 650px) {
+  .driving-videos article:last-child {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 900px) {
   .driving-view {
     grid-template-columns: 1fr;

@@ -1,0 +1,724 @@
+{
+  "source": "closed_loop_kinematic_bicycle",
+  "source_files_sha256": {
+    "src/perception_core/perception_core/__init__.py": "b3bf4b5939f83fa93021da82bad7cc006493cc8ff4fbc6ae3f988e034e38d459",
+    "src/perception_core/perception_core/common/__init__.py": "88dcf415b58e750603f0fa7e219f72423b32cde03eb31654b0a4a43ba8890c6d",
+    "src/perception_core/perception_core/common/ego_frame.py": "3c4584427355be8d889931b1c49e01de19d5cf19e621eef488050ce30383e039",
+    "src/perception_core/perception_core/common/geometry.py": "1dc662d3f186014e9673a0fb266122324e15ff7757481b3bbc8830af345798e9",
+    "src/perception_core/perception_core/common/iou.py": "4a44773b1f22984d0800b6b83e1c35de31f2bd4b952e64b563872578125ebcc0",
+    "src/perception_core/perception_core/common/types.py": "3d29f4998047e4a130e3792c6a86213b69c7a2021656170856d6c7c87256fcbe",
+    "src/perception_core/perception_core/control/__init__.py": "1eabf6b4a018c73e2a2f79b89c433ebf7aa3aed0d4907074a8d5dc8ea1ea4855",
+    "src/perception_core/perception_core/control/longitudinal.py": "2a9c54d5a85969292cf5398bd59d4a1ce3e3db12a411d968e1e588cea2103a56",
+    "src/perception_core/perception_core/control/vehicle.py": "4521b6717a55e4c3ad3acdc335767a18c0cb518fef6fbec5e4d161daa4d3cf2b",
+    "src/perception_core/perception_core/detection/__init__.py": "2adc3b076ebe1426cde5b8ee8ed0540bdb9c30d81ac0bfb002acfbbefb7c2e63",
+    "src/perception_core/perception_core/detection/base.py": "4bcc3d728efcb66a3d983b9e9c4f85b9f744937f074d823064b20308063c8e28",
+    "src/perception_core/perception_core/detection/lidar_cluster.py": "97fd383f56f56e104ced405257eaa9659334c4fde7cca78743439b90b7577aa5",
+    "src/perception_core/perception_core/detection/mock.py": "202e94d5e587dcf1b073da3fe0bbb98ee866f71b7ad638794637c32317a70612",
+    "src/perception_core/perception_core/detection/vggt.py": "798ed0bc2eb7b1eabb8d6d7f08dcebe99f7acf4cfa3d3da762e29bb6d3840b32",
+    "src/perception_core/perception_core/detection/yolo.py": "f99a5d13fbc05ad6e1591c6f8f0b974bd9ab3c38181d8ecb83b1d0229b12bacd",
+    "src/perception_core/perception_core/eval/__init__.py": "0883edb9650e0237084bd84727a4ff16f8237e8855e846ebbe2d3ba4a430aeeb",
+    "src/perception_core/perception_core/eval/association.py": "a88dc0b45e0ba2ed66975e2bee026d8bb40ba579366f41f7ab993bac29dd2b96",
+    "src/perception_core/perception_core/eval/control_metrics.py": "a6527a28b91eb811531fb956288b6da2c4961465f60848e664b8467d7322ca85",
+    "src/perception_core/perception_core/eval/metrics.py": "9c08952e33526eef3fc3edbc9953ab3b909bc19c8cc2659215e5142286b0eabd",
+    "src/perception_core/perception_core/eval/prediction_metrics.py": "6a273e59dd7ce90a7751222976185b7590a7157500281fd863abc6dc5f3464e7",
+    "src/perception_core/perception_core/fusion/__init__.py": "2eae46d74c672bd656890d17965cb438384c27107cd1b27a3f03aa704ed1a465",
+    "src/perception_core/perception_core/fusion/late_fusion.py": "431310a98946bf7ed89fa46252e528e4f3bf6c55792066912b26b2f2fc0520b1",
+    "src/perception_core/perception_core/io/__init__.py": "e7d7fe86bc1461d73c32037760288a3ce98b2ccba2ba7d94fac35f36e3bd94b7",
+    "src/perception_core/perception_core/io/carla_dataset.py": "e233b017520b364a8dd993936d6b5bc942d3a39fdc2a35760c5e88132876a934",
+    "src/perception_core/perception_core/io/kitti.py": "7f70ccb87210f8938dc3bd147d57e4b442b602fff4422672e7cdf10581451b4e",
+    "src/perception_core/perception_core/io/synthetic.py": "301dab687fff0019d11e46bd07f18cc4c050ea4e1f9a8351171c0b9d47d7d564",
+    "src/perception_core/perception_core/pipeline.py": "f12a2d760a52e13ac8efce44a28727723ddc04dbd1db57147ec523d41ef6c333",
+    "src/perception_core/perception_core/planning/__init__.py": "0ba502633e89fb15c2ffd024cae88a2ac2b9dd8d5ca9f761542d4d2c5c6ed0c3",
+    "src/perception_core/perception_core/planning/collision.py": "898a5a2ba11e3ea4624c3b9a2f67169de8a8544a2842d572fdd40035e58a6cc0",
+    "src/perception_core/perception_core/planning/local.py": "216bd8d157c1b656a15ec082fbb340872deaf480ab76b68f2e61ee33edc5d401",
+    "src/perception_core/perception_core/planning/route.py": "f6bb5224339d8c5e737069240efd988ceb3fa033ae7e8fe2be6d480a3afc867c",
+    "src/perception_core/perception_core/planning/types.py": "eaef094bd765ff1c4f0303d09e68a22af2581a74a6969c0467d59037c6057980",
+    "src/perception_core/perception_core/prediction/__init__.py": "dfcc98201cb48b851972c32083d8ffe4ba8236363b1c19816fbaea6fa3810f2d",
+    "src/perception_core/perception_core/prediction/history.py": "326aab09d5cbaf36ee6bbd40bc99b199d75b05b8b1d020a96666c37114a76211",
+    "src/perception_core/perception_core/prediction/physics.py": "0dee7cfbfb84c55430df267d5ce0170ef20aba2c8b592467d9c0cdbfd168e7b1",
+    "src/perception_core/perception_core/simulation/__init__.py": "5a7493db0ef45aa9cded3a7dd106020d1eb9154f1e54197f61244f1949606a65",
+    "src/perception_core/perception_core/simulation/driving.py": "42c8fa5623b44672e39f0f9b06f8983d812245d6c1710783ec5e03214f42e90d",
+    "src/perception_core/perception_core/tracking/__init__.py": "ee985298aef685bdfe7dd37d90be9dcdfa22b6e3f22284297ade471993c194cf",
+    "src/perception_core/perception_core/tracking/imm.py": "296e7b49b3480b9d54704a1256dc81f10d93fcb1b555318e261d299c3bce1361",
+    "src/perception_core/perception_core/tracking/kalman.py": "92281a0058f61a9d57a16ac49f3975d6c795ccfd912a2ecb4219b47b4368b2aa",
+    "src/perception_core/perception_core/tracking/mot.py": "b49a06def8445d3a58d2cafb283222eccd9ee3beca0442aa96fe3696c85abb23",
+    "src/perception_core/perception_core/viz/__init__.py": "25f09fb8ba37082204e17c6f5543e3cafda38bb490ea3e1cc47c1cea27b4e744",
+    "src/perception_core/perception_core/viz/bev.py": "88d7dfa133af2a2aaf000041b2eb06935a8f63ce8b8196235a713e0adfd4279e",
+    "src/perception_core/perception_core/viz/camera.py": "edf1b0a3505a6294f682719fe970e891e70cc678509328104c827a5ddbfcd588",
+    "src/perception_core/perception_core/viz/palette.py": "4323af60982efffde1c7d022b043a7762f2e0e0bce5d5a431e52c8a6fcea3ddf",
+    "src/perception_core/perception_core/viz/replay.py": "7d2ef21c2eb70b697c75035715cc0a7c62c8524a38d0f69294309bddbe1b0617"
+  },
+  "total": 18,
+  "passed": 18,
+  "runs": [
+    {
+      "scenario": "lead_braking",
+      "title": "前车行驶后急刹",
+      "detector": "gt",
+      "parameter": "lead_initial_x_m",
+      "value": 16,
+      "seed": 2026,
+      "file": "lead_braking-gt-16.json.gz",
+      "sha256": "0cc2d96b23affc19a6176d8a060a661d4370161758656ce0412a4d34238defa5",
+      "metrics": {
+        "success": true,
+        "goal_reached": false,
+        "expected_outcome": "stopped",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 5.327876435260897,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 7.12805460080965e-12,
+        "goal_distance_m": 47.51120976859423,
+        "elapsed_simulation_s": 19.999999999999662,
+        "statuses": [
+          "following",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.007100636023097,
+          "p95": 8.519466617144644,
+          "max": 9.877351927570999
+        }
+      },
+      "source_sha256": "3dfb0894e4b5e34bd8804c227984c7bc8d5cd28ecfae3be3e0ce0afdf7bced11"
+    },
+    {
+      "scenario": "lead_braking",
+      "title": "前车行驶后急刹",
+      "detector": "gt",
+      "parameter": "lead_initial_x_m",
+      "value": 20,
+      "seed": 2026,
+      "file": "lead_braking-gt-20.json.gz",
+      "sha256": "f936dd223bbfa7f410e6e99bcbde1a8cfd74f277af4d9b875344efaa0521a6fe",
+      "metrics": {
+        "success": true,
+        "goal_reached": false,
+        "expected_outcome": "stopped",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 5.975375648790873,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 1.224257287061168e-11,
+        "goal_distance_m": 44.1587089821242,
+        "elapsed_simulation_s": 19.999999999999662,
+        "statuses": [
+          "following",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 7.8193344589089975,
+          "p95": 8.33271149895154,
+          "max": 8.594912942498922
+        }
+      },
+      "source_sha256": "9959a7e83ede291e30246ee4b48077c70945c50cae85727b212343057e6c015d"
+    },
+    {
+      "scenario": "lead_braking",
+      "title": "前车行驶后急刹",
+      "detector": "gt",
+      "parameter": "lead_initial_x_m",
+      "value": 24,
+      "seed": 2026,
+      "file": "lead_braking-gt-24.json.gz",
+      "sha256": "c25d5fa76a06f9988d9f30c87dcc50c569dffcd59b58d538909d1212a00da4d5",
+      "metrics": {
+        "success": true,
+        "goal_reached": false,
+        "expected_outcome": "stopped",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 6.909880270992872,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 1.9352121457056004e-11,
+        "goal_distance_m": 41.0932136043262,
+        "elapsed_simulation_s": 19.999999999999662,
+        "statuses": [
+          "cruise",
+          "following",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.038664866471663,
+          "p95": 8.985245245276017,
+          "max": 14.842321979813278
+        }
+      },
+      "source_sha256": "b15e89eeaecc00da9c7d4530ebe439bc2a423b2dda4d689b027bac35a096380b"
+    },
+    {
+      "scenario": "cut_in",
+      "title": "邻道车辆切入并跟车",
+      "detector": "gt",
+      "parameter": "cut_in_duration_s",
+      "value": 1.5,
+      "seed": 2026,
+      "file": "cut_in-gt-1.5.json.gz",
+      "sha256": "125efd3f85fe44cfce3001d7b7ddea20bd2f3f5b23e3ef0e38f406d1c74ece5c",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 5.011635219272584,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.1772984498503008,
+        "goal_distance_m": 0.6332106543235199,
+        "elapsed_simulation_s": 21.699999999999626,
+        "statuses": [
+          "cruise",
+          "following",
+          "goal_approach",
+          "goal_reached",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.828344119396574,
+          "p95": 10.150562576018274,
+          "max": 10.434266994707286
+        }
+      },
+      "source_sha256": "0bb54ae149d5b41fca031522ac620630bbbc5614018bfcc26b14b97d78e5b1cd"
+    },
+    {
+      "scenario": "cut_in",
+      "title": "邻道车辆切入并跟车",
+      "detector": "gt",
+      "parameter": "cut_in_duration_s",
+      "value": 2.5,
+      "seed": 2026,
+      "file": "cut_in-gt-2.5.json.gz",
+      "sha256": "8d39cebae2adf0e763ba4f3a4e6f8dc59cf4501e4ee6a49d71f3e8149de79d9d",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 3.4513250378976252,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.19772203159381346,
+        "goal_distance_m": 0.6495325945477219,
+        "elapsed_simulation_s": 21.59999999999963,
+        "statuses": [
+          "cruise",
+          "following",
+          "goal_approach",
+          "goal_reached",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.789678676105384,
+          "p95": 10.244387062266469,
+          "max": 10.555824963375926
+        }
+      },
+      "source_sha256": "86c38511c626a5fd5e274b1b283dadba302d6e3c707f6abacbf581d67ce939a9"
+    },
+    {
+      "scenario": "cut_in",
+      "title": "邻道车辆切入并跟车",
+      "detector": "gt",
+      "parameter": "cut_in_duration_s",
+      "value": 3.5,
+      "seed": 2026,
+      "file": "cut_in-gt-3.5.json.gz",
+      "sha256": "c4f9186562108d9ae310ba51819358287f93179e6b2fd546106644b648f1443f",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 5.428557692830779,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.17715296952615625,
+        "goal_distance_m": 0.6330995163376514,
+        "elapsed_simulation_s": 21.699999999999626,
+        "statuses": [
+          "cruise",
+          "following",
+          "goal_approach",
+          "goal_reached",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.903266330689636,
+          "p95": 10.14509039814584,
+          "max": 30.122873024083674
+        }
+      },
+      "source_sha256": "5db68241ad6989ec9acfd990999f9ccad5f97dde5ae1a3f2f2edc34b7c9dc37b"
+    },
+    {
+      "scenario": "signal_crossing",
+      "title": "绿灯起步后连续行人横穿",
+      "detector": "gt",
+      "parameter": "green_time_s",
+      "value": 8,
+      "seed": 2026,
+      "file": "signal_crossing-gt-8.json.gz",
+      "sha256": "6faaca7a64e4d983161187e6ea60b2d42441068ab44743ceea43a38a2a9e2fe1",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 0.5646347134069046,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.1817786804521745,
+        "goal_distance_m": 0.6333972996790891,
+        "elapsed_simulation_s": 26.099999999999532,
+        "statuses": [
+          "cruise",
+          "goal_approach",
+          "goal_reached",
+          "stop_line",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 9.354617690599971,
+          "p95": 10.675147693837062,
+          "max": 10.783347068354487
+        }
+      },
+      "source_sha256": "3f5f9d1e6d9ee4d379b10dc020b15a45519253d8753ef77307a9977ea42b46d9"
+    },
+    {
+      "scenario": "signal_crossing",
+      "title": "绿灯起步后连续行人横穿",
+      "detector": "gt",
+      "parameter": "green_time_s",
+      "value": 10,
+      "seed": 2026,
+      "file": "signal_crossing-gt-10.json.gz",
+      "sha256": "2098647c67c836a614767932ce95e9156916d672cbcae52c48c87df6668b894c",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 0.6848340708706019,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.19457910636118564,
+        "goal_distance_m": 0.6433236132758537,
+        "elapsed_simulation_s": 25.499999999999545,
+        "statuses": [
+          "cruise",
+          "goal_approach",
+          "goal_reached",
+          "stop_line",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 9.60286886902395,
+          "p95": 10.988189198542386,
+          "max": 11.132871033623815
+        }
+      },
+      "source_sha256": "178211d48e0a744d802411ec9cc42359e70c95730bde17e5f7a98ba993d5a997"
+    },
+    {
+      "scenario": "signal_crossing",
+      "title": "绿灯起步后连续行人横穿",
+      "detector": "gt",
+      "parameter": "green_time_s",
+      "value": 12,
+      "seed": 2026,
+      "file": "signal_crossing-gt-12.json.gz",
+      "sha256": "ea47cdf2623c02143aca5be1b14c784757aa5fab6915169342b1b46bdb739593",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 0.6786388030324005,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.1993645722182455,
+        "goal_distance_m": 0.6469899477266097,
+        "elapsed_simulation_s": 25.099999999999554,
+        "statuses": [
+          "cruise",
+          "goal_approach",
+          "goal_reached",
+          "stop_line",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 9.650692583933946,
+          "p95": 11.07204620493576,
+          "max": 11.236521997489035
+        }
+      },
+      "source_sha256": "7e7ba7b5ba320175e66470c64d1388ce3dd7954aeebb746a3d15c198838d6711"
+    },
+    {
+      "scenario": "lead_braking",
+      "title": "前车行驶后急刹",
+      "detector": "lidar",
+      "parameter": "lead_initial_x_m",
+      "value": 16,
+      "seed": 2026,
+      "file": "lead_braking-lidar-16.json.gz",
+      "sha256": "86132aa9a70263ca80ab2f1571207e610415fd00db9e86686563d34ad64c8bbd",
+      "metrics": {
+        "success": true,
+        "goal_reached": false,
+        "expected_outcome": "stopped",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 5.394860486414796,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 7.065711720373804e-12,
+        "goal_distance_m": 47.57819381974812,
+        "elapsed_simulation_s": 19.999999999999662,
+        "statuses": [
+          "following",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.396730980020948,
+          "p95": 8.869977918220684,
+          "max": 10.830191080458462
+        }
+      },
+      "source_sha256": "b9cee52613a1c165069b0690f474293beb9e5254e9bbb995aa60d22b578d84af"
+    },
+    {
+      "scenario": "lead_braking",
+      "title": "前车行驶后急刹",
+      "detector": "lidar",
+      "parameter": "lead_initial_x_m",
+      "value": 20,
+      "seed": 2026,
+      "file": "lead_braking-lidar-20.json.gz",
+      "sha256": "6e70ec34a1e0fd514f67e68583a343e3139b64af41dc4d228f8d7310fefd158f",
+      "metrics": {
+        "success": true,
+        "goal_reached": false,
+        "expected_outcome": "stopped",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 6.013862296520529,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 1.2248696725592684e-11,
+        "goal_distance_m": 44.19719562985386,
+        "elapsed_simulation_s": 19.999999999999662,
+        "statuses": [
+          "following",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.403388526057824,
+          "p95": 8.9209501107689,
+          "max": 10.804270976223052
+        }
+      },
+      "source_sha256": "bf6b4edccea0c65504aee2740042616c2887ad7ab2ec4ee82f6fc6df151e1f22"
+    },
+    {
+      "scenario": "lead_braking",
+      "title": "前车行驶后急刹",
+      "detector": "lidar",
+      "parameter": "lead_initial_x_m",
+      "value": 24,
+      "seed": 2026,
+      "file": "lead_braking-lidar-24.json.gz",
+      "sha256": "2d5ab4eb91ae737f3b8f16432cbb0bd0d881e7dde016982a4b093679391dcec3",
+      "metrics": {
+        "success": true,
+        "goal_reached": false,
+        "expected_outcome": "stopped",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 6.9542635917044535,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 2.056100593429836e-11,
+        "goal_distance_m": 41.13759692503778,
+        "elapsed_simulation_s": 19.999999999999662,
+        "statuses": [
+          "cruise",
+          "following",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 8.411925414693542,
+          "p95": 8.903832285432145,
+          "max": 10.763934929855168
+        }
+      },
+      "source_sha256": "e96366114e676c010da32c0c0a87f8aae3c1c08be7fa20ef1d463a0640208555"
+    },
+    {
+      "scenario": "cut_in",
+      "title": "邻道车辆切入并跟车",
+      "detector": "lidar",
+      "parameter": "cut_in_duration_s",
+      "value": 1.5,
+      "seed": 2026,
+      "file": "cut_in-lidar-1.5.json.gz",
+      "sha256": "49b98e27a9c76d40d5577576e8d38c0e572a4c908302f68c3dd924f45d640704",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 5.012041235200552,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.18135509261529364,
+        "goal_distance_m": 0.6363754976594862,
+        "elapsed_simulation_s": 21.699999999999626,
+        "statuses": [
+          "cruise",
+          "following",
+          "goal_approach",
+          "goal_reached",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 9.175786449479947,
+          "p95": 10.448406095383689,
+          "max": 29.664985951967537
+        }
+      },
+      "source_sha256": "43b6f6a7987e5f5bb13f1514a21fa6dff3e1de8edd08c0911a219b416e20ec69"
+    },
+    {
+      "scenario": "cut_in",
+      "title": "邻道车辆切入并跟车",
+      "detector": "lidar",
+      "parameter": "cut_in_duration_s",
+      "value": 2.5,
+      "seed": 2026,
+      "file": "cut_in-lidar-2.5.json.gz",
+      "sha256": "4a636befbc38439f9e08f9784c15341c510e9062d0def9fed3ef53c784d509ff",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 3.665937622464803,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.17853207446103864,
+        "goal_distance_m": 0.6342350687693994,
+        "elapsed_simulation_s": 21.699999999999626,
+        "statuses": [
+          "cruise",
+          "following",
+          "goal_approach",
+          "goal_reached",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 9.133762564646815,
+          "p95": 10.55227880133316,
+          "max": 11.15022401791066
+        }
+      },
+      "source_sha256": "3fd0f1f7d90a13063ecdb94697978d6d5268a60b94108df67773c3c7ed10adf2"
+    },
+    {
+      "scenario": "cut_in",
+      "title": "邻道车辆切入并跟车",
+      "detector": "lidar",
+      "parameter": "cut_in_duration_s",
+      "value": 3.5,
+      "seed": 2026,
+      "file": "cut_in-lidar-3.5.json.gz",
+      "sha256": "e9951ea083ec5c9848b9f92ef4ee54032074be37038a710edaeed8601bf9eae6",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 5.265115262951753,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.18073329627683704,
+        "goal_distance_m": 0.6359039155290986,
+        "elapsed_simulation_s": 21.699999999999626,
+        "statuses": [
+          "cruise",
+          "following",
+          "goal_approach",
+          "goal_reached",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 9.210787924997714,
+          "p95": 10.559766745427623,
+          "max": 10.844646021723747
+        }
+      },
+      "source_sha256": "59ccb9a2d1312fc1b2f0fc70b70dc88b63b6871397764bab45e5e53a9d972926"
+    },
+    {
+      "scenario": "signal_crossing",
+      "title": "绿灯起步后连续行人横穿",
+      "detector": "lidar",
+      "parameter": "green_time_s",
+      "value": 8,
+      "seed": 2026,
+      "file": "signal_crossing-lidar-8.json.gz",
+      "sha256": "1a945d95ee660e3bc67902dba64280a4a4dd3eb34e0a25a04083735df6c55f24",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 0.8079999999996098,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.19445989273942857,
+        "goal_distance_m": 0.6432326192712594,
+        "elapsed_simulation_s": 25.69999999999954,
+        "statuses": [
+          "cruise",
+          "goal_approach",
+          "goal_reached",
+          "stop_line",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 11.467857768239323,
+          "p95": 13.448498159414157,
+          "max": 35.45480000320822
+        }
+      },
+      "source_sha256": "cf04ceceaac1b3894ecdc0562bae67b18f87d38aed0a781dd956c67f86a3daa9"
+    },
+    {
+      "scenario": "signal_crossing",
+      "title": "绿灯起步后连续行人横穿",
+      "detector": "lidar",
+      "parameter": "green_time_s",
+      "value": 10,
+      "seed": 2026,
+      "file": "signal_crossing-lidar-10.json.gz",
+      "sha256": "e7a8b5e1eea77701bac3907501808017d0141645ed4eadfd486796aaa06c98b3",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 0.8006887390229679,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.19330493880920127,
+        "goal_distance_m": 0.6423375975255254,
+        "elapsed_simulation_s": 25.69999999999954,
+        "statuses": [
+          "cruise",
+          "goal_approach",
+          "goal_reached",
+          "stop_line",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 11.226510361483133,
+          "p95": 12.928731233114377,
+          "max": 15.035960008390248
+        }
+      },
+      "source_sha256": "1a6ef6018e504dcd96c95396c2920344d82e0417169fa83e8b367855d3437bd6"
+    },
+    {
+      "scenario": "signal_crossing",
+      "title": "绿灯起步后连续行人横穿",
+      "detector": "lidar",
+      "parameter": "green_time_s",
+      "value": 12,
+      "seed": 2026,
+      "file": "signal_crossing-lidar-12.json.gz",
+      "sha256": "8108c85fb91f43b3814250e21e57cbce1d0bd1a3aa9c22f6b294677c0235292d",
+      "metrics": {
+        "success": true,
+        "goal_reached": true,
+        "expected_outcome": "goal",
+        "behavior_demonstrated": true,
+        "collision_samples": 0,
+        "road_boundary_samples": 0,
+        "red_light_violation_samples": 0,
+        "min_separating_axis_gap_m": 0.8079999999996098,
+        "max_lateral_offset_m": 0.0,
+        "final_speed_mps": 0.18276890712684202,
+        "goal_distance_m": 0.6341509223084074,
+        "elapsed_simulation_s": 25.29999999999955,
+        "statuses": [
+          "cruise",
+          "goal_approach",
+          "goal_reached",
+          "stop_line",
+          "yielding"
+        ],
+        "max_abs_acceleration_mps2": 3.0,
+        "planning_control_ms": {
+          "mean": 10.989358945654368,
+          "p95": 12.992339715128765,
+          "max": 15.087587991729379
+        }
+      },
+      "source_sha256": "30e4cee28a9e9cc3d0affdf10e32aa1a47fb2d64852c9e787d06de7a60711a6d"
+    }
+  ],
+  "scope": "One-factor parameter sweeps; fixed seed 2026. Synthetic LiDAR surface points have no ray-cast occlusion. These are selected tests, not a success-rate estimate."
+}

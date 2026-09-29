@@ -32,20 +32,24 @@ previous configuration. The association examples are educational matrices, separ
 
 ## Closed-loop planning and control
 
-The viewer supports interpolated or recorded-sample playback, an ego-following view, zoom, frame stepping, event navigation, PNG export and clickable speed / acceleration / steering plots. CARLA camera videos retain their original 5 Hz sampling, with synchronized speed, throttle and brake readings.
+The viewer supports interpolated or recorded-sample playback, an ego-following view, zoom, frame stepping, event navigation, PNG export and clickable speed / acceleration / steering plots. CARLA camera videos retain their newly recorded 10 Hz sampling, with synchronized speed, throttle and brake readings.
 
 [![Motion planning and vehicle feedback](docs/assets/driving_preview.jpg)](https://ayane225.github.io/Auto-Driver/#driving)
 
 A* route search, quintic lateral candidates, timed oriented-box collision checks,
 time-headway following, curve speed limits, stop lines, Pure Pursuit steering,
 speed feedback, emergency braking and stale-input handling are implemented in the core.
-**20/20** deterministic acceptance runs passed: ten scenarios each with GT detections
+**26/26** deterministic acceptance runs passed: thirteen scenarios each with GT detections
 and synthetic surface LiDAR processed by the existing detector/tracker/predictor.
 
+New scenarios cover lead-vehicle braking, a lane cut-in, and two pedestrians crossing after a signal turns green. **18/18** parameter-sweep runs passed with varied initial lead positions, lane-change durations and green-light times. Full compressed reports and parameters are linked from the viewer.
+
 The CARLA client drives without ego autopilot. A GT-input lane-following run reached
-its goal after **61.08 m**; an actual 64-channel LiDAR run stopped before a parked vehicle
-after **27.71 m**. Both recorded zero collision and lane-invasion events. These are
+its goal after **70.82 m**; an actual 64-channel LiDAR run stopped before a parked vehicle
+after **32.62 m**. A third actual-LiDAR run handles a moving lead vehicle braking at 6 s. All three recorded zero collision and lane-invasion events, zero cruise pedal reversals and no restarts after stopping. These are
 bounded, junction-free single-lane tests; synthetic LiDAR does not model ray occlusion.
+
+[![Actual LiDAR lead-vehicle braking and synchronized control plots](docs/assets/driving_control_preview.jpg)](https://ayane225.github.io/Auto-Driver/#carla-driving)
 
 [Interactive driving replay](https://ayane225.github.io/Auto-Driver/#driving) ·
 [CARLA videos](https://ayane225.github.io/Auto-Driver/#carla-driving) ·

@@ -125,7 +125,7 @@
             <h2>看见障碍，规划路径，控制车辆。</h2>
           </div>
           <p>
-            十个可复现的闭环场景。<br />查看实际行驶轨迹、候选路径、速度和控制指令。
+            十三个可复现的闭环场景。<br />查看实际行驶轨迹、候选路径、速度和控制指令。
           </p>
         </div>
         <div class="driving-features">
@@ -147,6 +147,9 @@
                 <option value="emergency">突现障碍紧急制动</option>
                 <option value="dropout">感知超时与恢复</option>
                 <option value="reroute">封路后的 A* 路线搜索</option>
+                <option value="lead_braking">前车行驶后急刹</option>
+                <option value="cut_in">邻道车辆切入并跟车</option>
+                <option value="signal_crossing">绿灯起步后连续行人横穿</option>
               </select></label
             >
             <label
@@ -318,7 +321,7 @@
           使用表面采样点云、真实聚类检测、跟踪与预测，但没有光线遮挡模型。规划器只使用当前观测和预测；障碍真值仅用于评分与显示。灰色候选为可行、橙色为被约束拒绝，不代表最终执行。碰撞检查、场景范围与耗时定义见完整报告。
         </p>
         <div class="driving-report-links">
-          <a href="assets/driving/index.json">20 次运行的指标与数据哈希 ↗</a
+          <a href="assets/driving/index.json">26 次运行的指标与数据哈希 ↗</a
           ><a
             href="https://github.com/AYANE225/Auto-Driver/blob/main/docs/planning_control_zh.md"
             >方法、复现与限制 ↗</a
@@ -338,6 +341,32 @@
               <tbody id="driving-results-body"></tbody>
             </table>
           </div>
+        </details>
+        <details class="driving-results" id="driving-interactions">
+          <summary>复杂交互：改变车距、切入时长与绿灯时刻</summary>
+          <p class="fine-print" id="driving-interactions-summary">
+            展开查看参数变化测试。固定种子，逐项改变条件；结果不代表未测试场景的成功率。
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>场景</th>
+                  <th>变化条件</th>
+                  <th>输入</th>
+                  <th>验收 / 完整记录</th>
+                  <th>最小分离轴间隙</th>
+                </tr>
+              </thead>
+              <tbody id="driving-interactions-body"></tbody>
+            </table>
+          </div>
+          <p class="fine-print">
+            <a href="assets/driving/interactions/index.json"
+              >18 次参数变化测试指标与哈希 ↗</a
+            >
+            · 记录为 gzip 压缩 JSON；合成 LiDAR 不模拟光线遮挡。
+          </p>
         </details>
         <div class="driving-command">
           <code id="driving-command"
@@ -377,7 +406,7 @@
                 id="driving-carla-gt-telemetry"
                 aria-label="与视频同步的车辆反馈"
               >
-                <span class="small">相机采样 5 Hz · 原始时序</span>
+                <span class="small">相机采样 10 Hz · 原始时序</span>
                 <dl>
                   <div>
                     <dt>实际速度</dt>
@@ -394,6 +423,24 @@
                 </dl>
                 <p data-value="status">播放或拖动视频以查看同步控制记录。</p>
                 <p class="small" data-value="time">—</p>
+              </div>
+              <div class="carla-control-plot">
+                <p class="small">
+                  速度：<span class="actual-speed">实测</span> /
+                  <span class="target-speed">参考</span> · 踏板：<span
+                    class="throttle"
+                    >油门</span
+                  >
+                  / <span class="brake">制动</span>
+                </p>
+                <canvas
+                  id="driving-carla-gt-chart"
+                  tabindex="0"
+                  aria-label="速度与踏板记录，点击或方向键定位视频"
+                ></canvas>
+                <p class="small" id="driving-carla-gt-summary">
+                  加载控制验收结果…
+                </p>
               </div>
               <a href="assets/driving/carla_gt.json">控制记录与评估 JSON ↗</a>
             </div>
@@ -419,7 +466,7 @@
                 id="driving-carla-lidar-telemetry"
                 aria-label="与视频同步的车辆反馈"
               >
-                <span class="small">相机采样 5 Hz · 原始时序</span>
+                <span class="small">相机采样 10 Hz · 原始时序</span>
                 <dl>
                   <div>
                     <dt>实际速度</dt>
@@ -437,14 +484,97 @@
                 <p data-value="status">播放或拖动视频以查看同步控制记录。</p>
                 <p class="small" data-value="time">—</p>
               </div>
+              <div class="carla-control-plot">
+                <p class="small">
+                  速度：<span class="actual-speed">实测</span> /
+                  <span class="target-speed">参考</span> · 踏板：<span
+                    class="throttle"
+                    >油门</span
+                  >
+                  / <span class="brake">制动</span>
+                </p>
+                <canvas
+                  id="driving-carla-lidar-chart"
+                  tabindex="0"
+                  aria-label="速度与踏板记录，点击或方向键定位视频"
+                ></canvas>
+                <p class="small" id="driving-carla-lidar-summary">
+                  加载控制验收结果…
+                </p>
+              </div>
               <a href="assets/driving/carla_lidar.json"
+                >控制记录与评估 JSON ↗</a
+              >
+            </div>
+          </article>
+          <article>
+            <video
+              id="driving-carla-lead_braking-video"
+              controls
+              playsinline
+              preload="none"
+              poster="assets/driving_carla_lead_braking.jpg"
+            >
+              <source
+                src="assets/driving_carla_lead_braking.mp4"
+                type="video/mp4"
+              />
+            </video>
+            <div>
+              <h3>动态前车行驶后急刹</h3>
+              <p>
+                真实 LiDAR 跟踪移动前车；第 6
+                秒前车全制动，自车通过感知和预测减速停车。
+              </p>
+              <div
+                class="driving-telemetry"
+                id="driving-carla-lead_braking-telemetry"
+                aria-label="与视频同步的车辆反馈"
+              >
+                <span class="small">相机采样 10 Hz · 原始时序</span>
+                <dl>
+                  <div>
+                    <dt>实际速度</dt>
+                    <dd data-value="speed">—</dd>
+                  </div>
+                  <div>
+                    <dt>油门</dt>
+                    <dd data-value="throttle">—</dd>
+                  </div>
+                  <div>
+                    <dt>制动</dt>
+                    <dd data-value="brake">—</dd>
+                  </div>
+                </dl>
+                <p data-value="status">播放或拖动视频以查看同步控制记录。</p>
+                <p class="small" data-value="time">—</p>
+              </div>
+              <div class="carla-control-plot">
+                <p class="small">
+                  速度：<span class="actual-speed">实测</span> /
+                  <span class="target-speed">参考</span> · 踏板：<span
+                    class="throttle"
+                    >油门</span
+                  >
+                  / <span class="brake">制动</span>
+                </p>
+                <canvas
+                  id="driving-carla-lead_braking-chart"
+                  tabindex="0"
+                  aria-label="速度与踏板记录，点击或方向键定位视频"
+                ></canvas>
+                <p class="small" id="driving-carla-lead_braking-summary">
+                  加载控制验收结果…
+                </p>
+              </div>
+              <a href="assets/driving/carla_lead_braking.json"
                 >控制记录与评估 JSON ↗</a
               >
             </div>
           </article>
         </div>
         <p class="fine-print">
-          这两次测试限定在无路口的单车道路线，记录碰撞与压线事件；没有验证城市交通全场景。转向映射针对测试车辆固定了转向比例曲线。视频时长是仿真时间，不代表计算实时性；红绿灯停车与绕障目前在上方合成闭环场景中验证。
+          这三次测试限定在无路口的单车道路线，记录碰撞、压线、巡航踏板切换和停车后再起步；没有验证城市交通全场景。转向映射针对测试车辆固定了转向比例曲线。视频时长是仿真时间，不代表计算实时性；红绿灯停车与绕障目前在上方合成闭环场景中验证。
         </p>
       </section>
       <section class="section wrap" id="pointcloud">

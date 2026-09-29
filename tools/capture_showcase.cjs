@@ -37,13 +37,39 @@ async function main() {
       el.value = "28";
       el.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    await page
-      .locator("#driving .driving-panel")
-      .screenshot({
-        path: path.join(out, "driving_preview.jpg"),
-        type: "jpeg",
-        quality: 92,
-      });
+    await page.locator("#driving .driving-panel").screenshot({
+      path: path.join(out, "driving_preview.jpg"),
+      type: "jpeg",
+      quality: 92,
+    });
+    const video = page.locator("#driving-carla-lead_braking-video");
+    await video.scrollIntoViewIfNeeded();
+    await video.evaluate((v) => v.load());
+    await page.waitForFunction(
+      () =>
+        document.getElementById("driving-carla-lead_braking-video")
+          .readyState >= 2,
+    );
+    await video.evaluate(
+      (v) =>
+        new Promise((resolve) => {
+          v.addEventListener("seeked", resolve, { once: true });
+          v.currentTime = 6.5;
+        }),
+    );
+    await page.waitForFunction(
+      () =>
+        document.getElementById("driving-carla-lead_braking-telemetry").dataset
+          .frame === "65",
+    );
+    await video.evaluate((v) => {
+      v.controls = false;
+    });
+    await page.locator("#carla-driving article:last-child").screenshot({
+      path: path.join(out, "driving_control_preview.jpg"),
+      type: "jpeg",
+      quality: 92,
+    });
   } finally {
     await browser.close();
   }

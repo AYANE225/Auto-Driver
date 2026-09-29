@@ -26,8 +26,8 @@ async function main() {
     const index = await json("assets/driving/index.json");
     const reports = {};
     for (const mode of ["gt", "lidar"]) {
-      assert.equal(index.modes[mode].scenarios.length, 10);
-      assert.equal(index.modes[mode].passed, 10);
+      assert.equal(index.modes[mode].scenarios.length, 13);
+      assert.equal(index.modes[mode].passed, 13);
       for (const entry of index.modes[mode].scenarios) {
         const bytes = await (await get(`assets/driving/${entry.file}`)).body();
         assert.equal(
@@ -246,12 +246,51 @@ async function main() {
     assert.equal(await page.locator("#driving-signal").textContent(), "红灯");
     await seek(reports["gt/traffic_light"].frames.length - 1);
     assert.equal(await page.locator("#driving-signal").textContent(), "绿灯");
-    for (const mode of ["gt", "lidar"]) {
+    const interactions = await json("assets/driving/interactions/index.json");
+    assert.equal(interactions.total, 18);
+    assert.equal(interactions.passed, 18);
+    for (const run of interactions.runs) {
+      const bytes = await (
+        await get(`assets/driving/interactions/${run.file}`)
+      ).body();
+      assert.equal(
+        crypto.createHash("sha256").update(bytes).digest("hex"),
+        run.sha256,
+      );
+      const source = require("node:zlib").gunzipSync(bytes);
+      assert.equal(
+        crypto.createHash("sha256").update(source).digest("hex"),
+        run.source_sha256,
+      );
+      assert.deepEqual(JSON.parse(source).metrics, run.metrics);
+    }
+    await page.locator("#driving-interactions > summary").click();
+    await page.waitForFunction(
+      () =>
+        document.getElementById("driving-interactions").dataset.loaded ===
+        "true",
+    );
+    assert.equal(
+      await page.locator("#driving-interactions-body tr").count(),
+      18,
+    );
+    await page.locator("#driving-interactions > summary").click();
+    for (const mode of ["gt", "lidar", "lead_braking"]) {
       const report = await json(`assets/driving/carla_${mode}.json`);
       assert.equal(report.autopilot, false);
       assert.equal(report.metrics.success, true);
       assert.equal(report.metrics.collision_events, 0);
       assert.equal(report.metrics.lane_invasion_events, 0);
+      assert.equal(report.metrics.control_acceptance, true);
+      assert.equal(report.metrics.longitudinal.cruise_pedal_reversals, 0);
+      assert.equal(report.metrics.longitudinal.restarts_after_stop, 0);
+      assert.equal(
+        report.metrics.longitudinal.normal_acceleration_limit_violations,
+        0,
+      );
+      assert.equal(report.control_samples.length, report.frames.length);
+      assert.equal(report.camera_dt_s, 0.1);
+      assert.ok(report.source_files_sha256["carla/run_driving.py"]);
       const video = page.locator(`#driving-carla-${mode}-video`);
       await video.scrollIntoViewIfNeeded();
       await video.evaluate((v) => v.play());
@@ -288,6 +327,12 @@ async function main() {
           `${(report.frames[sample].command.brake * 100).toFixed(0)}%`,
         );
       }
+      const chart = page.locator(`#driving-carla-${mode}-chart`);
+      await chart.click({ position: { x: 100, y: 60 } });
+      await page.waitForFunction(
+        (id) => document.getElementById(id).currentTime > 1,
+        `driving-carla-${mode}-video`,
+      );
     }
     await page.locator("#driving-scene").selectOption("obstacle");
     await ready("gt", "obstacle");
@@ -352,7 +397,7 @@ async function main() {
       "curve",
     );
     console.log(
-      "PASS: 20 driving replays and hashes; feedback, scenarios, braking, signals, playback, download, 2 CARLA videos, mobile layouts, failed and delayed requests.",
+      "PASS: 26 driving replays, 18 interaction reports and hashes; feedback, scenarios, braking, signals, playback, download, 3 CARLA videos and control plots, mobile layouts, failed and delayed requests.",
     );
   } finally {
     await browser.close();
